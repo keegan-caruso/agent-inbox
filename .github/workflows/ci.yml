@@ -22,11 +22,17 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      - name: Install native AOT prerequisites
+        run: sudo apt-get install -y clang zlib1g-dev
+
       - name: Restore
         run: dotnet restore
 
       - name: Build
         run: dotnet build --no-restore -c Release
 
+      - name: Publish Tests (AOT)
+        run: dotnet publish tests/AgentInbox.Tests/AgentInbox.Tests.csproj --no-restore -c Release -r linux-x64
+
       - name: Test
-        run: dotnet test --no-build -c Release
+        run: ./tests/AgentInbox.Tests/bin/Release/net10.0/linux-x64/publish/AgentInbox.Tests
