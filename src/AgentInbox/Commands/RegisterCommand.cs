@@ -8,17 +8,21 @@ public static class RegisterCommand
 {
     public static Command Build(Option<string> dbPathOption, Option<OutputFormat> formatOption)
     {
-        var agentIdArg = new Argument<string>("agent-id", "The unique agent identifier");
-        var displayNameOpt = new Option<string?>("--display-name", "Optional display name for the agent");
+        var agentIdArg = new Argument<string>(CommandNames.AgentIdArg) { Description = "The unique agent identifier" };
+        var displayNameOpt = new Option<string?>(CommandNames.DisplayName) { Description = "Optional display name for the agent" };
 
-        var cmd = new Command("register", "Register an agent")
+        var cmd = new Command(CommandNames.Register, "Register an agent")
         {
             agentIdArg,
             displayNameOpt
         };
 
-        cmd.SetHandler((string agentId, string? displayName, string dbPath, OutputFormat format) =>
+        cmd.SetAction((ParseResult parseResult) =>
         {
+            var agentId = parseResult.GetValue(agentIdArg)!;
+            var displayName = parseResult.GetValue(displayNameOpt);
+            var dbPath = parseResult.GetValue(dbPathOption)!;
+            var format = parseResult.GetValue(formatOption);
             var formatter = FormatterFactory.Create(format);
             try
             {
@@ -64,7 +68,7 @@ public static class RegisterCommand
                 formatter.WriteError(ex.Message);
                 Environment.Exit(1);
             }
-        }, agentIdArg, displayNameOpt, dbPathOption, formatOption);
+        });
 
         return cmd;
     }

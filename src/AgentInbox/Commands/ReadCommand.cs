@@ -9,17 +9,21 @@ public static class ReadCommand
 {
     public static Command Build(Option<string> dbPathOption, Option<OutputFormat> formatOption)
     {
-        var messageIdArg = new Argument<long>("message-id", "Message ID to read");
-        var asOpt = new Option<string>("--as", "Agent ID reading the message") { IsRequired = true };
+        var messageIdArg = new Argument<long>(CommandNames.MessageIdArg) { Description = "Message ID to read" };
+        var asOpt = new Option<string>(CommandNames.As) { Required = true, Description = "Agent ID reading the message" };
 
-        var cmd = new Command("read", "Read a specific message and mark it as read")
+        var cmd = new Command(CommandNames.Read, "Read a specific message and mark it as read")
         {
             messageIdArg,
             asOpt
         };
 
-        cmd.SetHandler((long messageId, string asAgent, string dbPath, OutputFormat format) =>
+        cmd.SetAction((ParseResult parseResult) =>
         {
+            var messageId = parseResult.GetValue(messageIdArg);
+            var asAgent = parseResult.GetValue(asOpt)!;
+            var dbPath = parseResult.GetValue(dbPathOption)!;
+            var format = parseResult.GetValue(formatOption);
             var formatter = FormatterFactory.Create(format);
             try
             {
@@ -63,7 +67,7 @@ public static class ReadCommand
                 formatter.WriteError(ex.Message);
                 Environment.Exit(1);
             }
-        }, messageIdArg, asOpt, dbPathOption, formatOption);
+        });
 
         return cmd;
     }
