@@ -52,7 +52,7 @@ public static class RegisterCommand
                     if (!isDeregistered)
                     {
                         formatter.WriteSuccess(CommandNames.Messages.AgentAlreadyRegistered(agentId));
-                        return;
+                        return 0;
                     }
 
                     using var reactivateCmd = conn.CreateCommand();
@@ -62,11 +62,12 @@ public static class RegisterCommand
                     reactivateCmd.ExecuteNonQuery();
                     formatter.WriteSuccess(CommandNames.Messages.AgentReactivated(agentId));
                 }
+
+                return 0;
             }
             catch (Exception ex)
             {
-                formatter.WriteError(ex.Message);
-                Environment.Exit(1);
+                return CommandExecution.Fail(formatter, ex);
             }
         });
 

@@ -30,6 +30,9 @@ public static class InboxCommand
                 using var ctx = new DbContext(dbPath);
                 var conn = ctx.Connection;
 
+                if (!CommandExecution.IsActiveAgent(conn, agentId))
+                    return CommandExecution.Fail(formatter, CommandNames.Messages.AgentNotActive(agentId));
+
                 var sql = """
                     SELECT m.id, m.sender_id, m.subject, m.body, m.reply_to_id, m.created_at, mr.is_read
                     FROM message_recipients mr
@@ -61,11 +64,11 @@ public static class InboxCommand
                 }
 
                 formatter.WriteInbox(entries);
+                return 0;
             }
             catch (Exception ex)
             {
-                formatter.WriteError(ex.Message);
-                Environment.Exit(1);
+                return CommandExecution.Fail(formatter, ex);
             }
         });
 

@@ -50,13 +50,16 @@ internal static class CommandNames
 
         // send
         public const string NoRecipientsSpecified = "No recipients specified.";
+        public static string AgentNotActive(string id) => $"Agent '{id}' is not an active registered agent.";
         public static string SenderNotActive(string id) => $"Sender '{id}' is not an active registered agent.";
         public static string RecipientNotActive(string id) => $"Recipient '{id}' is not an active registered agent.";
         public static string MessageSent(long id) => $"Message sent (ID: {id}).";
 
         // reply
         public static string MessageNotFound(long id) => $"Message {id} not found.";
+        public static string MessageNotAccessible(long id, string agentId) => $"Message {id} not found for agent '{agentId}'.";
         public const string NoReplyRecipients = "No recipients for the reply (you are the only participant).";
+        public static string SenderNotParticipant(string id, long messageId) => $"Sender '{id}' is not a participant in message {messageId} and cannot reply to it.";
         public static string ReplySent(long id) => $"Reply sent (ID: {id}).";
     }
 

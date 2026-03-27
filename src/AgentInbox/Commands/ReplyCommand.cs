@@ -36,23 +36,14 @@ public static class ReplyCommand
                 senderCheckCmd.CommandText = "SELECT COUNT(*) FROM agents WHERE id = @id AND deregistered_at IS NULL";
                 senderCheckCmd.Parameters.AddWithValue("@id", from);
                 if ((long)(senderCheckCmd.ExecuteScalar() ?? 0L) == 0)
-                {
-                    formatter.WriteError(CommandNames.Messages.SenderNotActive(from));
-                    Environment.Exit(1);
-                    return;
-                }
+                    return CommandExecution.Fail(formatter, CommandNames.Messages.SenderNotActive(from));
 
                 using var msgCmd = conn.CreateCommand();
                 msgCmd.CommandText = "SELECT id, sender_id, subject FROM messages WHERE id = @id";
                 msgCmd.Parameters.AddWithValue("@id", toMessage);
                 using var msgReader = msgCmd.ExecuteReader();
                 if (!msgReader.Read())
-                {
-                    msgReader.Close();
-                    formatter.WriteError(CommandNames.Messages.MessageNotFound(toMessage));
-                    Environment.Exit(1);
-                    return;
-                }
+                    return CommandExecution.Fail(formatter, CommandNames.Messages.MessageNotFound(toMessage));
                 string originalSenderId = msgReader.GetString(1);
                 string? originalSubject = msgReader.IsDBNull(2) ? null : msgReader.GetString(2);
                 msgReader.Close();
@@ -66,15 +57,20 @@ public static class ReplyCommand
                     originalRecipients.Add(recipientsReader.GetString(0));
                 recipientsReader.Close();
 
-                var replyRecipients = new HashSet<string>(originalRecipients) { originalSenderId };
+                if (from != originalSenderId && !originalRecipients.Contains(from))
+                    return CommandExecution.Fail(formatter, CommandNames.Messages.SenderNotParticipant(from, toMessage));
+
+                var replyRecipients = new HashSet<string>(
+                    originalRecipients.Where(recipientId => CommandExecution.IsActiveAgent(conn, recipientId)),
+                    StringComparer.Ordinal);
+
+                if (CommandExecution.IsActiveAgent(conn, originalSenderId))
+                    replyRecipients.Add(originalSenderId);
+
                 replyRecipients.Remove(from);
 
                 if (replyRecipients.Count == 0)
-                {
-                    formatter.WriteError(CommandNames.Messages.NoReplyRecipients);
-                    Environment.Exit(1);
-                    return;
-                }
+                    return CommandExecution.Fail(formatter, CommandNames.Messages.NoReplyRecipients);
 
                 using var tx = conn.BeginTransaction();
 
@@ -103,11 +99,11 @@ public static class ReplyCommand
 
                 tx.Commit();
                 formatter.WriteSuccess(CommandNames.Messages.ReplySent(newMessageId));
+                return 0;
             }
             catch (Exception ex)
             {
-                formatter.WriteError(ex.Message);
-                Environment.Exit(1);
+                return CommandExecution.Fail(formatter, ex);
             }
         });
 

@@ -12,7 +12,12 @@ public sealed class DbContext : IDisposable
         if (!string.IsNullOrEmpty(dir))
             Directory.CreateDirectory(dir);
 
-        _connection = new SqliteConnection($"Data Source={dbPath}");
+        var connectionStringBuilder = new SqliteConnectionStringBuilder
+        {
+            DataSource = dbPath
+        };
+
+        _connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
         _connection.Open();
         DbBootstrap.EnsureSchema(_connection);
     }
