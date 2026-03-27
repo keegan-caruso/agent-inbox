@@ -8,11 +8,11 @@ public static class ReplyCommand
 {
     public static Command Build(Option<string> dbPathOption, Option<OutputFormat> formatOption)
     {
-        var fromOpt = new Option<string>(CommandNames.From) { Required = true, Description = "Replying agent ID" };
-        var toMessageOpt = new Option<long>(CommandNames.ToMessage) { Required = true, Description = "Message ID to reply to" };
-        var bodyOpt = new Option<string>(CommandNames.Body) { Required = true, Description = "Reply body" };
+        var fromOpt = new Option<string>(CommandNames.From) { Required = true, Description = CommandNames.Descriptions.ReplyFrom };
+        var toMessageOpt = new Option<long>(CommandNames.ToMessage) { Required = true, Description = CommandNames.Descriptions.ToMessage };
+        var bodyOpt = new Option<string>(CommandNames.Body) { Required = true, Description = CommandNames.Descriptions.ReplyBody };
 
-        var cmd = new Command(CommandNames.Reply, "Reply to a message")
+        var cmd = new Command(CommandNames.Reply, CommandNames.Descriptions.Reply)
         {
             fromOpt,
             toMessageOpt,

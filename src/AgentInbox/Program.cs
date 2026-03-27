@@ -11,18 +11,18 @@ var dbPathOption = new Option<string>(CommandNames.DbPath)
 {
     Recursive = true,
     DefaultValueFactory = _ => dbPathDefault,
-    Description = "Path to the SQLite database file"
+    Description = CommandNames.Descriptions.DbPath
 };
 
 var formatOption = new Option<OutputFormat>(CommandNames.Format)
 {
     Recursive = true,
     DefaultValueFactory = _ => OutputFormat.Plain,
-    Description = "Output format: plain, json, or ndjson"
+    Description = CommandNames.Descriptions.Format
 };
 formatOption.Aliases.Add(CommandNames.FormatAlias);
 
-var rootCommand = new RootCommand("agent-inbox: inter-agent communication on a single machine");
+var rootCommand = new RootCommand(CommandNames.Descriptions.RootCommand);
 rootCommand.Add(dbPathOption);
 rootCommand.Add(formatOption);
 

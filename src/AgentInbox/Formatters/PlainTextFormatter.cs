@@ -49,13 +49,7 @@ public sealed class PlainTextFormatter : IOutputFormatter
         }
     }
 
-    public void WriteSuccess(string message)
-    {
-        Console.WriteLine(message);
-    }
+    public void WriteSuccess(string message) => Console.WriteLine(message);
 
-    public void WriteError(string message)
-    {
-        Console.Error.WriteLine($"Error: {message}");
-    }
+    public void WriteError(string message) => Console.Error.WriteLine($"Error: {message}");
 }

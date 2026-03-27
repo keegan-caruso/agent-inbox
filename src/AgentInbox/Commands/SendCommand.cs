@@ -8,12 +8,12 @@ public static class SendCommand
 {
     public static Command Build(Option<string> dbPathOption, Option<OutputFormat> formatOption)
     {
-        var fromOpt = new Option<string>(CommandNames.From) { Required = true, Description = "Sender agent ID" };
-        var toOpt = new Option<string>(CommandNames.To) { Required = true, Description = "Comma-separated recipient agent IDs" };
-        var subjectOpt = new Option<string?>(CommandNames.Subject) { Description = "Message subject" };
-        var bodyOpt = new Option<string>(CommandNames.Body) { Required = true, Description = "Message body" };
+        var fromOpt = new Option<string>(CommandNames.From) { Required = true, Description = CommandNames.Descriptions.SendFrom };
+        var toOpt = new Option<string>(CommandNames.To) { Required = true, Description = CommandNames.Descriptions.SendTo };
+        var subjectOpt = new Option<string?>(CommandNames.Subject) { Description = CommandNames.Descriptions.Subject };
+        var bodyOpt = new Option<string>(CommandNames.Body) { Required = true, Description = CommandNames.Descriptions.SendBody };
 
-        var cmd = new Command(CommandNames.Send, "Send a message")
+        var cmd = new Command(CommandNames.Send, CommandNames.Descriptions.Send)
         {
             fromOpt,
             toOpt,

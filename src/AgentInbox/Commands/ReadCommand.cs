@@ -9,10 +9,10 @@ public static class ReadCommand
 {
     public static Command Build(Option<string> dbPathOption, Option<OutputFormat> formatOption)
     {
-        var messageIdArg = new Argument<long>(CommandNames.MessageIdArg) { Description = "Message ID to read" };
-        var asOpt = new Option<string>(CommandNames.As) { Required = true, Description = "Agent ID reading the message" };
+        var messageIdArg = new Argument<long>(CommandNames.MessageIdArg) { Description = CommandNames.Descriptions.MessageIdArg };
+        var asOpt = new Option<string>(CommandNames.As) { Required = true, Description = CommandNames.Descriptions.ReadAgentId };
 
-        var cmd = new Command(CommandNames.Read, "Read a specific message and mark it as read")
+        var cmd = new Command(CommandNames.Read, CommandNames.Descriptions.Read)
         {
             messageIdArg,
             asOpt

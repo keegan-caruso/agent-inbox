@@ -9,10 +9,10 @@ public static class InboxCommand
 {
     public static Command Build(Option<string> dbPathOption, Option<OutputFormat> formatOption)
     {
-        var agentIdArg = new Argument<string>(CommandNames.AgentIdArg) { Description = "Agent ID to retrieve inbox for" };
-        var unreadOnlyOpt = new Option<bool>(CommandNames.UnreadOnly) { Description = "Show only unread messages" };
+        var agentIdArg = new Argument<string>(CommandNames.AgentIdArg) { Description = CommandNames.Descriptions.InboxAgentId };
+        var unreadOnlyOpt = new Option<bool>(CommandNames.UnreadOnly) { Description = CommandNames.Descriptions.UnreadOnly };
 
-        var cmd = new Command(CommandNames.Inbox, "List messages in an agent's inbox")
+        var cmd = new Command(CommandNames.Inbox, CommandNames.Descriptions.Inbox)
         {
             agentIdArg,
             unreadOnlyOpt

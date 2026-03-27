@@ -8,10 +8,10 @@ public static class RegisterCommand
 {
     public static Command Build(Option<string> dbPathOption, Option<OutputFormat> formatOption)
     {
-        var agentIdArg = new Argument<string>(CommandNames.AgentIdArg) { Description = "The unique agent identifier" };
-        var displayNameOpt = new Option<string?>(CommandNames.DisplayName) { Description = "Optional display name for the agent" };
+        var agentIdArg = new Argument<string>(CommandNames.AgentIdArg) { Description = CommandNames.Descriptions.AgentIdArg };
+        var displayNameOpt = new Option<string?>(CommandNames.DisplayName) { Description = CommandNames.Descriptions.DisplayName };
 
-        var cmd = new Command(CommandNames.Register, "Register an agent")
+        var cmd = new Command(CommandNames.Register, CommandNames.Descriptions.Register)
         {
             agentIdArg,
             displayNameOpt
