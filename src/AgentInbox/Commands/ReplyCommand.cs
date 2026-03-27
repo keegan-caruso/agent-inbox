@@ -83,13 +83,15 @@ public static class ReplyCommand
                 insertMsgCmd.Parameters.AddWithValue("@replyToId", toMessage);
                 var newMessageId = (long)(insertMsgCmd.ExecuteScalar() ?? throw new InvalidOperationException("Failed to insert reply"));
 
+                using var insertRecCmd = conn.CreateCommand();
+                insertRecCmd.Transaction = tx;
+                insertRecCmd.CommandText = "INSERT INTO message_recipients (message_id, recipient_id) VALUES (@messageId, @recipientId)";
+                insertRecCmd.Parameters.AddWithValue("@messageId", newMessageId);
+                var recipientIdParam = insertRecCmd.Parameters.AddWithValue("@recipientId", DBNull.Value);
+
                 foreach (var recipientId in replyRecipients)
                 {
-                    using var insertRecCmd = conn.CreateCommand();
-                    insertRecCmd.Transaction = tx;
-                    insertRecCmd.CommandText = "INSERT INTO message_recipients (message_id, recipient_id) VALUES (@messageId, @recipientId)";
-                    insertRecCmd.Parameters.AddWithValue("@messageId", newMessageId);
-                    insertRecCmd.Parameters.AddWithValue("@recipientId", recipientId);
+                    recipientIdParam.Value = recipientId;
                     insertRecCmd.ExecuteNonQuery();
                 }
 

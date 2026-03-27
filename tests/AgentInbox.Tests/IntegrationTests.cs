@@ -52,6 +52,22 @@ public sealed class IntegrationTests : IDisposable
     }
 
     [Fact]
+    public async Task Register_ReactivatedAgentWithoutDisplayName_PreservesExistingDisplayName()
+    {
+        await InvokeAsync("register", "bob", "--display-name", "Bob");
+        await InvokeAsync("deregister", "bob");
+
+        var result = await InvokeAsync("register", "bob");
+
+        Assert.Equal(0, result.ExitCode);
+
+        using var ctx = CreateContext();
+        var conn = ctx.Connection;
+        var displayName = Scalar<string>(conn, "SELECT display_name FROM agents WHERE id='bob' AND deregistered_at IS NULL");
+        Assert.Equal("Bob", displayName);
+    }
+
+    [Fact]
     public async Task SendMessage_CreatesMessageAndRecipients()
     {
         await InvokeAsync("register", "alice");

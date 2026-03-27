@@ -56,9 +56,17 @@ public static class RegisterCommand
                     }
 
                     using var reactivateCmd = conn.CreateCommand();
-                    reactivateCmd.CommandText = "UPDATE agents SET deregistered_at = NULL, display_name = @displayName, registered_at = datetime('now') WHERE id = @id";
                     reactivateCmd.Parameters.AddWithValue("@id", agentId);
-                    reactivateCmd.Parameters.AddWithValue("@displayName", (object?)displayName ?? DBNull.Value);
+                    if (displayName is null)
+                    {
+                        reactivateCmd.CommandText = "UPDATE agents SET deregistered_at = NULL, registered_at = datetime('now') WHERE id = @id";
+                    }
+                    else
+                    {
+                        reactivateCmd.CommandText = "UPDATE agents SET deregistered_at = NULL, display_name = @displayName, registered_at = datetime('now') WHERE id = @id";
+                        reactivateCmd.Parameters.AddWithValue("@displayName", displayName);
+                    }
+
                     reactivateCmd.ExecuteNonQuery();
                     formatter.WriteSuccess(CommandNames.Messages.AgentReactivated(agentId));
                 }
