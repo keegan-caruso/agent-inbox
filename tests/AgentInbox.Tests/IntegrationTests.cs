@@ -16,8 +16,9 @@ public sealed class IntegrationTests : IDisposable
 
     public void Dispose()
     {
-        if (File.Exists(_dbPath))
-            File.Delete(_dbPath);
+        DeleteIfExists(_dbPath);
+        DeleteIfExists($"{_dbPath}-wal");
+        DeleteIfExists($"{_dbPath}-shm");
     }
 
     private DbContext CreateContext() => new DbContext(_dbPath);
@@ -186,5 +187,11 @@ public sealed class IntegrationTests : IDisposable
         using var cmd = conn.CreateCommand();
         cmd.CommandText = sql;
         return (T)cmd.ExecuteScalar()!;
+    }
+
+    private static void DeleteIfExists(string path)
+    {
+        if (File.Exists(path))
+            File.Delete(path);
     }
 }

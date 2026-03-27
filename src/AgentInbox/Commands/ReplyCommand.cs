@@ -32,10 +32,7 @@ public static class ReplyCommand
                 using var ctx = new DbContext(dbPath);
                 var conn = ctx.Connection;
 
-                using var senderCheckCmd = conn.CreateCommand();
-                senderCheckCmd.CommandText = "SELECT COUNT(*) FROM agents WHERE id = @id AND deregistered_at IS NULL";
-                senderCheckCmd.Parameters.AddWithValue("@id", from);
-                if ((long)(senderCheckCmd.ExecuteScalar() ?? 0L) == 0)
+                if (!CommandExecution.IsActiveAgent(conn, from))
                     return CommandExecution.Fail(formatter, CommandNames.Messages.SenderNotActive(from));
 
                 using var msgCmd = conn.CreateCommand();
@@ -60,9 +57,8 @@ public static class ReplyCommand
                 if (from != originalSenderId && !originalRecipients.Contains(from))
                     return CommandExecution.Fail(formatter, CommandNames.Messages.SenderNotParticipant(from, toMessage));
 
-                var replyRecipients = new HashSet<string>(
-                    originalRecipients.Where(recipientId => CommandExecution.IsActiveAgent(conn, recipientId)),
-                    StringComparer.Ordinal);
+                var activeParticipantIds = CommandExecution.GetActiveAgentIds(conn, originalRecipients);
+                var replyRecipients = new HashSet<string>(activeParticipantIds, StringComparer.Ordinal);
 
                 if (CommandExecution.IsActiveAgent(conn, originalSenderId))
                     replyRecipients.Add(originalSenderId);
