@@ -34,9 +34,7 @@ public static class DeregisterCommand
                 if (!reader.Read())
                 {
                     reader.Close();
-                    formatter.WriteError(CommandNames.Messages.AgentNotFound(agentId));
-                    Environment.Exit(1);
-                    return;
+                    return CommandExecution.Fail(formatter, CommandNames.Messages.AgentNotFound(agentId));
                 }
 
                 bool alreadyDeregistered = !reader.IsDBNull(0);
@@ -44,9 +42,7 @@ public static class DeregisterCommand
 
                 if (alreadyDeregistered)
                 {
-                    formatter.WriteError(CommandNames.Messages.AgentAlreadyDeregistered(agentId));
-                    Environment.Exit(1);
-                    return;
+                    return CommandExecution.Fail(formatter, CommandNames.Messages.AgentAlreadyDeregistered(agentId));
                 }
 
                 using var updateCmd = conn.CreateCommand();
@@ -54,11 +50,11 @@ public static class DeregisterCommand
                 updateCmd.Parameters.AddWithValue("@id", agentId);
                 updateCmd.ExecuteNonQuery();
                 formatter.WriteSuccess(CommandNames.Messages.AgentDeregistered(agentId));
+                return 0;
             }
             catch (Exception ex)
             {
-                formatter.WriteError(ex.Message);
-                Environment.Exit(1);
+                return CommandExecution.Fail(formatter, ex);
             }
         });
 

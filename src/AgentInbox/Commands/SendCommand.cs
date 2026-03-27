@@ -34,30 +34,26 @@ public static class SendCommand
             {
                 var recipientIds = to.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                 if (recipientIds.Length == 0)
+                    return CommandExecution.Fail(formatter, CommandNames.Messages.NoRecipientsSpecified);
+
+                var uniqueRecipientIds = new List<string>();
+                var seenRecipients = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var recipientId in recipientIds)
                 {
-                    formatter.WriteError(CommandNames.Messages.NoRecipientsSpecified);
-                    Environment.Exit(1);
-                    return;
+                    if (seenRecipients.Add(recipientId))
+                        uniqueRecipientIds.Add(recipientId);
                 }
 
                 using var ctx = new DbContext(dbPath);
                 var conn = ctx.Connection;
 
-                if (!IsActiveAgent(conn, from))
-                {
-                    formatter.WriteError(CommandNames.Messages.SenderNotActive(from));
-                    Environment.Exit(1);
-                    return;
-                }
+                if (!CommandExecution.IsActiveAgent(conn, from))
+                    return CommandExecution.Fail(formatter, CommandNames.Messages.SenderNotActive(from));
 
-                foreach (var recipientId in recipientIds)
+                foreach (var recipientId in uniqueRecipientIds)
                 {
-                    if (!IsActiveAgent(conn, recipientId))
-                    {
-                        formatter.WriteError(CommandNames.Messages.RecipientNotActive(recipientId));
-                        Environment.Exit(1);
-                        return;
-                    }
+                    if (!CommandExecution.IsActiveAgent(conn, recipientId))
+                        return CommandExecution.Fail(formatter, CommandNames.Messages.RecipientNotActive(recipientId));
                 }
 
                 using var tx = conn.BeginTransaction();
@@ -70,7 +66,7 @@ public static class SendCommand
                 insertMsgCmd.Parameters.AddWithValue("@body", body);
                 var messageId = (long)(insertMsgCmd.ExecuteScalar() ?? throw new InvalidOperationException("Failed to insert message"));
 
-                foreach (var recipientId in recipientIds)
+                foreach (var recipientId in uniqueRecipientIds)
                 {
                     using var insertRecCmd = conn.CreateCommand();
                     insertRecCmd.Transaction = tx;
@@ -82,22 +78,14 @@ public static class SendCommand
 
                 tx.Commit();
                 formatter.WriteSuccess(CommandNames.Messages.MessageSent(messageId));
+                return 0;
             }
             catch (Exception ex)
             {
-                formatter.WriteError(ex.Message);
-                Environment.Exit(1);
+                return CommandExecution.Fail(formatter, ex);
             }
         });
 
         return cmd;
-    }
-
-    private static bool IsActiveAgent(Microsoft.Data.Sqlite.SqliteConnection conn, string agentId)
-    {
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT COUNT(*) FROM agents WHERE id = @id AND deregistered_at IS NULL";
-        cmd.Parameters.AddWithValue("@id", agentId);
-        return (long)(cmd.ExecuteScalar() ?? 0L) > 0;
     }
 }

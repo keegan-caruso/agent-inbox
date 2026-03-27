@@ -37,11 +37,11 @@ public static class AgentsCommand
                 }
 
                 formatter.WriteAgents(agents);
+                return 0;
             }
             catch (Exception ex)
             {
-                formatter.WriteError(ex.Message);
-                Environment.Exit(1);
+                return CommandExecution.Fail(formatter, ex);
             }
         });
 

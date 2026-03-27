@@ -30,18 +30,22 @@ public static class ReadCommand
                 using var ctx = new DbContext(dbPath);
                 var conn = ctx.Connection;
 
+                if (!CommandExecution.IsActiveAgent(conn, asAgent))
+                    return CommandExecution.Fail(formatter, CommandNames.Messages.AgentNotActive(asAgent));
+
                 using var msgCmd = conn.CreateCommand();
-                msgCmd.CommandText = "SELECT id, sender_id, subject, body, reply_to_id, created_at FROM messages WHERE id = @id";
+                msgCmd.CommandText = """
+                    SELECT m.id, m.sender_id, m.subject, m.body, m.reply_to_id, m.created_at
+                    FROM messages m
+                    JOIN message_recipients mr ON mr.message_id = m.id
+                    WHERE m.id = @id AND mr.recipient_id = @agentId
+                    """;
                 msgCmd.Parameters.AddWithValue("@id", messageId);
+                msgCmd.Parameters.AddWithValue("@agentId", asAgent);
                 using var reader = msgCmd.ExecuteReader();
 
                 if (!reader.Read())
-                {
-                    reader.Close();
-                    formatter.WriteError(CommandNames.Messages.MessageNotFound(messageId));
-                    Environment.Exit(1);
-                    return;
-                }
+                    return CommandExecution.Fail(formatter, CommandNames.Messages.MessageNotAccessible(messageId, asAgent));
 
                 var message = new Message
                 {
@@ -61,11 +65,11 @@ public static class ReadCommand
                 markCmd.ExecuteNonQuery();
 
                 formatter.WriteMessage(message);
+                return 0;
             }
             catch (Exception ex)
             {
-                formatter.WriteError(ex.Message);
-                Environment.Exit(1);
+                return CommandExecution.Fail(formatter, ex);
             }
         });
 
