@@ -7,7 +7,7 @@
       "type": "process",
       "args": [
         "build",
-        "${workspaceFolder}",
+        "${workspaceFolder}/AgentInbox.slnx",
         "--configuration",
         "Debug"
       ],
@@ -19,7 +19,7 @@
       "type": "process",
       "args": [
         "publish",
-        "${workspaceFolder}",
+        "${workspaceFolder}/src/AgentInbox/AgentInbox.csproj",
         "--configuration",
         "Release"
       ],
@@ -30,8 +30,11 @@
       "command": "dotnet",
       "type": "process",
       "args": [
-        "test",
-        "${workspaceFolder}"
+        "run",
+        "--project",
+        "${workspaceFolder}/tests/AgentInbox.Tests/AgentInbox.Tests.csproj",
+        "-c",
+        "Release"
       ],
       "problemMatcher": "$msCompile"
     },
@@ -43,7 +46,7 @@
         "watch",
         "run",
         "--project",
-        "${workspaceFolder}"
+        "${workspaceFolder}/src/AgentInbox/AgentInbox.csproj"
       ],
       "problemMatcher": "$msCompile",
       "isBackground": true

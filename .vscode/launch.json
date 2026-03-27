@@ -5,7 +5,7 @@
       "name": ".NET Launch (dotnet run)",
       "type": "dotnet",
       "request": "launch",
-      "projectPath": "${workspaceFolder}"
+      "projectPath": "${workspaceFolder}/src/AgentInbox/AgentInbox.csproj"
     },
     {
       "name": ".NET Attach",
