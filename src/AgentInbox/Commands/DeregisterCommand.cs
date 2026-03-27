@@ -8,15 +8,18 @@ public static class DeregisterCommand
 {
     public static Command Build(Option<string> dbPathOption, Option<OutputFormat> formatOption)
     {
-        var agentIdArg = new Argument<string>("agent-id", "The unique agent identifier");
+        var agentIdArg = new Argument<string>(CommandNames.AgentIdArg) { Description = "The unique agent identifier" };
 
-        var cmd = new Command("deregister", "Deregister (soft-delete) an agent")
+        var cmd = new Command(CommandNames.Deregister, "Deregister (soft-delete) an agent")
         {
             agentIdArg
         };
 
-        cmd.SetHandler((string agentId, string dbPath, OutputFormat format) =>
+        cmd.SetAction((ParseResult parseResult) =>
         {
+            var agentId = parseResult.GetValue(agentIdArg)!;
+            var dbPath = parseResult.GetValue(dbPathOption)!;
+            var format = parseResult.GetValue(formatOption);
             var formatter = FormatterFactory.Create(format);
             try
             {
@@ -57,7 +60,7 @@ public static class DeregisterCommand
                 formatter.WriteError(ex.Message);
                 Environment.Exit(1);
             }
-        }, agentIdArg, dbPathOption, formatOption);
+        });
 
         return cmd;
     }

@@ -8,12 +8,12 @@ public static class SendCommand
 {
     public static Command Build(Option<string> dbPathOption, Option<OutputFormat> formatOption)
     {
-        var fromOpt = new Option<string>("--from", "Sender agent ID") { IsRequired = true };
-        var toOpt = new Option<string>("--to", "Comma-separated recipient agent IDs") { IsRequired = true };
-        var subjectOpt = new Option<string?>("--subject", "Message subject");
-        var bodyOpt = new Option<string>("--body", "Message body") { IsRequired = true };
+        var fromOpt = new Option<string>(CommandNames.From) { Required = true, Description = "Sender agent ID" };
+        var toOpt = new Option<string>(CommandNames.To) { Required = true, Description = "Comma-separated recipient agent IDs" };
+        var subjectOpt = new Option<string?>(CommandNames.Subject) { Description = "Message subject" };
+        var bodyOpt = new Option<string>(CommandNames.Body) { Required = true, Description = "Message body" };
 
-        var cmd = new Command("send", "Send a message")
+        var cmd = new Command(CommandNames.Send, "Send a message")
         {
             fromOpt,
             toOpt,
@@ -21,8 +21,14 @@ public static class SendCommand
             bodyOpt
         };
 
-        cmd.SetHandler((string from, string to, string? subject, string body, string dbPath, OutputFormat format) =>
+        cmd.SetAction((ParseResult parseResult) =>
         {
+            var from = parseResult.GetValue(fromOpt)!;
+            var to = parseResult.GetValue(toOpt)!;
+            var subject = parseResult.GetValue(subjectOpt);
+            var body = parseResult.GetValue(bodyOpt)!;
+            var dbPath = parseResult.GetValue(dbPathOption)!;
+            var format = parseResult.GetValue(formatOption);
             var formatter = FormatterFactory.Create(format);
             try
             {
@@ -82,7 +88,7 @@ public static class SendCommand
                 formatter.WriteError(ex.Message);
                 Environment.Exit(1);
             }
-        }, fromOpt, toOpt, subjectOpt, bodyOpt, dbPathOption, formatOption);
+        });
 
         return cmd;
     }

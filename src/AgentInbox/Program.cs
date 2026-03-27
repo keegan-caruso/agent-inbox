@@ -7,27 +7,31 @@ var dbPathDefault = Path.Combine(
     ".agent-inbox",
     "inbox.db");
 
-var dbPathOption = new Option<string>(
-    "--db-path",
-    description: "Path to the SQLite database file",
-    getDefaultValue: () => dbPathDefault);
+var dbPathOption = new Option<string>(CommandNames.DbPath)
+{
+    Recursive = true,
+    DefaultValueFactory = _ => dbPathDefault,
+    Description = "Path to the SQLite database file"
+};
 
-var formatOption = new Option<OutputFormat>(
-    "--format",
-    description: "Output format: plain, json, or ndjson",
-    getDefaultValue: () => OutputFormat.Plain);
-formatOption.AddAlias("-f");
+var formatOption = new Option<OutputFormat>(CommandNames.Format)
+{
+    Recursive = true,
+    DefaultValueFactory = _ => OutputFormat.Plain,
+    Description = "Output format: plain, json, or ndjson"
+};
+formatOption.Aliases.Add(CommandNames.FormatAlias);
 
 var rootCommand = new RootCommand("agent-inbox: inter-agent communication on a single machine");
-rootCommand.AddGlobalOption(dbPathOption);
-rootCommand.AddGlobalOption(formatOption);
+rootCommand.Add(dbPathOption);
+rootCommand.Add(formatOption);
 
-rootCommand.AddCommand(RegisterCommand.Build(dbPathOption, formatOption));
-rootCommand.AddCommand(DeregisterCommand.Build(dbPathOption, formatOption));
-rootCommand.AddCommand(AgentsCommand.Build(dbPathOption, formatOption));
-rootCommand.AddCommand(SendCommand.Build(dbPathOption, formatOption));
-rootCommand.AddCommand(ReplyCommand.Build(dbPathOption, formatOption));
-rootCommand.AddCommand(InboxCommand.Build(dbPathOption, formatOption));
-rootCommand.AddCommand(ReadCommand.Build(dbPathOption, formatOption));
+rootCommand.Add(RegisterCommand.Build(dbPathOption, formatOption));
+rootCommand.Add(DeregisterCommand.Build(dbPathOption, formatOption));
+rootCommand.Add(AgentsCommand.Build(dbPathOption, formatOption));
+rootCommand.Add(SendCommand.Build(dbPathOption, formatOption));
+rootCommand.Add(ReplyCommand.Build(dbPathOption, formatOption));
+rootCommand.Add(InboxCommand.Build(dbPathOption, formatOption));
+rootCommand.Add(ReadCommand.Build(dbPathOption, formatOption));
 
-return await rootCommand.InvokeAsync(args);
+return await rootCommand.Parse(args).InvokeAsync();

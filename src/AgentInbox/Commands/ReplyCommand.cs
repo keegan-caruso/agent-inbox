@@ -8,19 +8,24 @@ public static class ReplyCommand
 {
     public static Command Build(Option<string> dbPathOption, Option<OutputFormat> formatOption)
     {
-        var fromOpt = new Option<string>("--from", "Replying agent ID") { IsRequired = true };
-        var toMessageOpt = new Option<long>("--to-message", "Message ID to reply to") { IsRequired = true };
-        var bodyOpt = new Option<string>("--body", "Reply body") { IsRequired = true };
+        var fromOpt = new Option<string>(CommandNames.From) { Required = true, Description = "Replying agent ID" };
+        var toMessageOpt = new Option<long>(CommandNames.ToMessage) { Required = true, Description = "Message ID to reply to" };
+        var bodyOpt = new Option<string>(CommandNames.Body) { Required = true, Description = "Reply body" };
 
-        var cmd = new Command("reply", "Reply to a message")
+        var cmd = new Command(CommandNames.Reply, "Reply to a message")
         {
             fromOpt,
             toMessageOpt,
             bodyOpt
         };
 
-        cmd.SetHandler((string from, long toMessage, string body, string dbPath, OutputFormat format) =>
+        cmd.SetAction((ParseResult parseResult) =>
         {
+            var from = parseResult.GetValue(fromOpt)!;
+            var toMessage = parseResult.GetValue(toMessageOpt);
+            var body = parseResult.GetValue(bodyOpt)!;
+            var dbPath = parseResult.GetValue(dbPathOption)!;
+            var format = parseResult.GetValue(formatOption);
             var formatter = FormatterFactory.Create(format);
             try
             {
@@ -104,7 +109,7 @@ public static class ReplyCommand
                 formatter.WriteError(ex.Message);
                 Environment.Exit(1);
             }
-        }, fromOpt, toMessageOpt, bodyOpt, dbPathOption, formatOption);
+        });
 
         return cmd;
     }

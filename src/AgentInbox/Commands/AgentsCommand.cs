@@ -9,10 +9,12 @@ public static class AgentsCommand
 {
     public static Command Build(Option<string> dbPathOption, Option<OutputFormat> formatOption)
     {
-        var cmd = new Command("agents", "List all active agents");
+        var cmd = new Command(CommandNames.Agents, "List all active agents");
 
-        cmd.SetHandler((string dbPath, OutputFormat format) =>
+        cmd.SetAction((ParseResult parseResult) =>
         {
+            var dbPath = parseResult.GetValue(dbPathOption)!;
+            var format = parseResult.GetValue(formatOption);
             var formatter = FormatterFactory.Create(format);
             try
             {
@@ -41,7 +43,7 @@ public static class AgentsCommand
                 formatter.WriteError(ex.Message);
                 Environment.Exit(1);
             }
-        }, dbPathOption, formatOption);
+        });
 
         return cmd;
     }

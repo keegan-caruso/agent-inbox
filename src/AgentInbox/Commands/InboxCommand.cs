@@ -9,17 +9,21 @@ public static class InboxCommand
 {
     public static Command Build(Option<string> dbPathOption, Option<OutputFormat> formatOption)
     {
-        var agentIdArg = new Argument<string>("agent-id", "Agent ID to retrieve inbox for");
-        var unreadOnlyOpt = new Option<bool>("--unread-only", "Show only unread messages");
+        var agentIdArg = new Argument<string>(CommandNames.AgentIdArg) { Description = "Agent ID to retrieve inbox for" };
+        var unreadOnlyOpt = new Option<bool>(CommandNames.UnreadOnly) { Description = "Show only unread messages" };
 
-        var cmd = new Command("inbox", "List messages in an agent's inbox")
+        var cmd = new Command(CommandNames.Inbox, "List messages in an agent's inbox")
         {
             agentIdArg,
             unreadOnlyOpt
         };
 
-        cmd.SetHandler((string agentId, bool unreadOnly, string dbPath, OutputFormat format) =>
+        cmd.SetAction((ParseResult parseResult) =>
         {
+            var agentId = parseResult.GetValue(agentIdArg)!;
+            var unreadOnly = parseResult.GetValue(unreadOnlyOpt);
+            var dbPath = parseResult.GetValue(dbPathOption)!;
+            var format = parseResult.GetValue(formatOption);
             var formatter = FormatterFactory.Create(format);
             try
             {
@@ -63,7 +67,7 @@ public static class InboxCommand
                 formatter.WriteError(ex.Message);
                 Environment.Exit(1);
             }
-        }, agentIdArg, unreadOnlyOpt, dbPathOption, formatOption);
+        });
 
         return cmd;
     }
