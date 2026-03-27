@@ -8,9 +8,9 @@ public static class DeregisterCommand
 {
     public static Command Build(Option<string> dbPathOption, Option<OutputFormat> formatOption)
     {
-        var agentIdArg = new Argument<string>(CommandNames.AgentIdArg) { Description = "The unique agent identifier" };
+        var agentIdArg = new Argument<string>(CommandNames.AgentIdArg) { Description = CommandNames.Descriptions.AgentIdArg };
 
-        var cmd = new Command(CommandNames.Deregister, "Deregister (soft-delete) an agent")
+        var cmd = new Command(CommandNames.Deregister, CommandNames.Descriptions.Deregister)
         {
             agentIdArg
         };

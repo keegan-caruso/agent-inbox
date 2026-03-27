@@ -9,7 +9,7 @@ public static class AgentsCommand
 {
     public static Command Build(Option<string> dbPathOption, Option<OutputFormat> formatOption)
     {
-        var cmd = new Command(CommandNames.Agents, "List all active agents");
+        var cmd = new Command(CommandNames.Agents, CommandNames.Descriptions.Agents);
 
         cmd.SetAction((ParseResult parseResult) =>
         {

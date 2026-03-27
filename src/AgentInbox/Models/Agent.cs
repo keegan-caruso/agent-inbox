@@ -2,8 +2,8 @@ namespace AgentInbox.Models;
 
 public sealed class Agent
 {
-    public string Id { get; init; } = "";
+    public required string Id { get; init; }
     public string? DisplayName { get; init; }
-    public string RegisteredAt { get; init; } = "";
+    public required string RegisteredAt { get; init; }
     public string? DeregisteredAt { get; init; }
 }

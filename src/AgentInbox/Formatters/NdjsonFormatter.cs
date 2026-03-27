@@ -11,10 +11,8 @@ public sealed class NdjsonFormatter : IOutputFormatter
             Console.WriteLine(JsonSerializer.Serialize(agent, JsonContext.Default.Agent));
     }
 
-    public void WriteMessage(Message message)
-    {
+    public void WriteMessage(Message message) =>
         Console.WriteLine(JsonSerializer.Serialize(message, JsonContext.Default.Message));
-    }
 
     public void WriteInbox(IReadOnlyList<InboxEntry> entries)
     {
@@ -22,13 +20,9 @@ public sealed class NdjsonFormatter : IOutputFormatter
             Console.WriteLine(JsonSerializer.Serialize(entry, JsonContext.Default.InboxEntry));
     }
 
-    public void WriteSuccess(string message)
-    {
+    public void WriteSuccess(string message) =>
         Console.WriteLine(JsonSerializer.Serialize(new SuccessResult { Message = message }, JsonContext.Default.SuccessResult));
-    }
 
-    public void WriteError(string message)
-    {
+    public void WriteError(string message) =>
         Console.Error.WriteLine(JsonSerializer.Serialize(new ErrorResult { Error = message }, JsonContext.Default.ErrorResult));
-    }
 }
