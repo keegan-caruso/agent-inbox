@@ -50,9 +50,10 @@ public static class SendCommand
                 if (!CommandExecution.IsActiveAgent(conn, from))
                     return CommandExecution.Fail(formatter, CommandNames.Messages.SenderNotActive(from));
 
+                var activeRecipientIds = CommandExecution.GetActiveAgentIds(conn, uniqueRecipientIds);
                 foreach (var recipientId in uniqueRecipientIds)
                 {
-                    if (!CommandExecution.IsActiveAgent(conn, recipientId))
+                    if (!activeRecipientIds.Contains(recipientId))
                         return CommandExecution.Fail(formatter, CommandNames.Messages.RecipientNotActive(recipientId));
                 }
 
@@ -66,13 +67,17 @@ public static class SendCommand
                 insertMsgCmd.Parameters.AddWithValue("@body", body);
                 var messageId = (long)(insertMsgCmd.ExecuteScalar() ?? throw new InvalidOperationException("Failed to insert message"));
 
+                using var insertRecCmd = conn.CreateCommand();
+                insertRecCmd.Transaction = tx;
+                insertRecCmd.CommandText = "INSERT INTO message_recipients (message_id, recipient_id) VALUES (@messageId, @recipientId)";
+                insertRecCmd.Parameters.AddWithValue("@messageId", messageId);
+                var recipientIdParam = insertRecCmd.CreateParameter();
+                recipientIdParam.ParameterName = "@recipientId";
+                insertRecCmd.Parameters.Add(recipientIdParam);
+
                 foreach (var recipientId in uniqueRecipientIds)
                 {
-                    using var insertRecCmd = conn.CreateCommand();
-                    insertRecCmd.Transaction = tx;
-                    insertRecCmd.CommandText = "INSERT INTO message_recipients (message_id, recipient_id) VALUES (@messageId, @recipientId)";
-                    insertRecCmd.Parameters.AddWithValue("@messageId", messageId);
-                    insertRecCmd.Parameters.AddWithValue("@recipientId", recipientId);
+                    recipientIdParam.Value = recipientId;
                     insertRecCmd.ExecuteNonQuery();
                 }
 

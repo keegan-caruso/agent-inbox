@@ -22,4 +22,29 @@ internal static class CommandExecution
         cmd.Parameters.AddWithValue("@id", agentId);
         return (long)(cmd.ExecuteScalar() ?? 0L) > 0;
     }
+
+    public static HashSet<string> GetActiveAgentIds(SqliteConnection conn, IReadOnlyList<string> agentIds)
+    {
+        var activeAgentIds = new HashSet<string>(StringComparer.Ordinal);
+        if (agentIds.Count == 0)
+            return activeAgentIds;
+
+        using var cmd = conn.CreateCommand();
+        var parameterNames = new List<string>(agentIds.Count);
+        for (var i = 0; i < agentIds.Count; i++)
+        {
+            var parameterName = $"@id{i}";
+            parameterNames.Add(parameterName);
+            cmd.Parameters.AddWithValue(parameterName, agentIds[i]);
+        }
+
+        cmd.CommandText =
+            $"SELECT id FROM agents WHERE deregistered_at IS NULL AND id IN ({string.Join(", ", parameterNames)})";
+
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+            activeAgentIds.Add(reader.GetString(0));
+
+        return activeAgentIds;
+    }
 }
