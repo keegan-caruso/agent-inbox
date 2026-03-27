@@ -6,7 +6,7 @@
     "editor.defaultFormatter": "ms-dotnettools.csharp"
   },
   "files.exclude": {
-    "**/bin": true,
-    "**/obj": true
+    "**/bin/**": true,
+    "**/obj/**": true
   }
 }
