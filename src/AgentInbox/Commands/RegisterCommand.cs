@@ -42,7 +42,7 @@ public static class RegisterCommand
                     insertCmd.Parameters.AddWithValue("@id", agentId);
                     insertCmd.Parameters.AddWithValue("@displayName", (object?)displayName ?? DBNull.Value);
                     insertCmd.ExecuteNonQuery();
-                    formatter.WriteSuccess($"Agent '{agentId}' registered successfully.");
+                    formatter.WriteSuccess(CommandNames.Messages.AgentRegistered(agentId));
                 }
                 else
                 {
@@ -51,7 +51,7 @@ public static class RegisterCommand
 
                     if (!isDeregistered)
                     {
-                        formatter.WriteSuccess($"Agent '{agentId}' is already registered.");
+                        formatter.WriteSuccess(CommandNames.Messages.AgentAlreadyRegistered(agentId));
                         return;
                     }
 
@@ -60,7 +60,7 @@ public static class RegisterCommand
                     reactivateCmd.Parameters.AddWithValue("@id", agentId);
                     reactivateCmd.Parameters.AddWithValue("@displayName", (object?)displayName ?? DBNull.Value);
                     reactivateCmd.ExecuteNonQuery();
-                    formatter.WriteSuccess($"Agent '{agentId}' reactivated.");
+                    formatter.WriteSuccess(CommandNames.Messages.AgentReactivated(agentId));
                 }
             }
             catch (Exception ex)

@@ -35,7 +35,7 @@ public static class SendCommand
                 var recipientIds = to.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                 if (recipientIds.Length == 0)
                 {
-                    formatter.WriteError("No recipients specified.");
+                    formatter.WriteError(CommandNames.Messages.NoRecipientsSpecified);
                     Environment.Exit(1);
                     return;
                 }
@@ -45,7 +45,7 @@ public static class SendCommand
 
                 if (!IsActiveAgent(conn, from))
                 {
-                    formatter.WriteError($"Sender '{from}' is not an active registered agent.");
+                    formatter.WriteError(CommandNames.Messages.SenderNotActive(from));
                     Environment.Exit(1);
                     return;
                 }
@@ -54,7 +54,7 @@ public static class SendCommand
                 {
                     if (!IsActiveAgent(conn, recipientId))
                     {
-                        formatter.WriteError($"Recipient '{recipientId}' is not an active registered agent.");
+                        formatter.WriteError(CommandNames.Messages.RecipientNotActive(recipientId));
                         Environment.Exit(1);
                         return;
                     }
@@ -81,7 +81,7 @@ public static class SendCommand
                 }
 
                 tx.Commit();
-                formatter.WriteSuccess($"Message sent (ID: {messageId}).");
+                formatter.WriteSuccess(CommandNames.Messages.MessageSent(messageId));
             }
             catch (Exception ex)
             {

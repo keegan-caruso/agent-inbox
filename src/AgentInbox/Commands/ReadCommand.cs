@@ -38,7 +38,7 @@ public static class ReadCommand
                 if (!reader.Read())
                 {
                     reader.Close();
-                    formatter.WriteError($"Message {messageId} not found.");
+                    formatter.WriteError(CommandNames.Messages.MessageNotFound(messageId));
                     Environment.Exit(1);
                     return;
                 }

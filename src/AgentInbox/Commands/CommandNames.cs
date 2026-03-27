@@ -36,6 +36,30 @@ internal static class CommandNames
     // read options
     public const string As = "--as";
 
+    internal static class Messages
+    {
+        // register
+        public static string AgentRegistered(string id) => $"Agent '{id}' registered successfully.";
+        public static string AgentAlreadyRegistered(string id) => $"Agent '{id}' is already registered.";
+        public static string AgentReactivated(string id) => $"Agent '{id}' reactivated.";
+
+        // deregister
+        public static string AgentNotFound(string id) => $"Agent '{id}' not found.";
+        public static string AgentAlreadyDeregistered(string id) => $"Agent '{id}' is already deregistered.";
+        public static string AgentDeregistered(string id) => $"Agent '{id}' deregistered.";
+
+        // send
+        public const string NoRecipientsSpecified = "No recipients specified.";
+        public static string SenderNotActive(string id) => $"Sender '{id}' is not an active registered agent.";
+        public static string RecipientNotActive(string id) => $"Recipient '{id}' is not an active registered agent.";
+        public static string MessageSent(long id) => $"Message sent (ID: {id}).";
+
+        // reply
+        public static string MessageNotFound(long id) => $"Message {id} not found.";
+        public const string NoReplyRecipients = "No recipients for the reply (you are the only participant).";
+        public static string ReplySent(long id) => $"Reply sent (ID: {id}).";
+    }
+
     internal static class Descriptions
     {
         // Root command

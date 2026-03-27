@@ -37,7 +37,7 @@ public static class ReplyCommand
                 senderCheckCmd.Parameters.AddWithValue("@id", from);
                 if ((long)(senderCheckCmd.ExecuteScalar() ?? 0L) == 0)
                 {
-                    formatter.WriteError($"Sender '{from}' is not an active registered agent.");
+                    formatter.WriteError(CommandNames.Messages.SenderNotActive(from));
                     Environment.Exit(1);
                     return;
                 }
@@ -49,7 +49,7 @@ public static class ReplyCommand
                 if (!msgReader.Read())
                 {
                     msgReader.Close();
-                    formatter.WriteError($"Message {toMessage} not found.");
+                    formatter.WriteError(CommandNames.Messages.MessageNotFound(toMessage));
                     Environment.Exit(1);
                     return;
                 }
@@ -71,7 +71,7 @@ public static class ReplyCommand
 
                 if (replyRecipients.Count == 0)
                 {
-                    formatter.WriteError("No recipients for the reply (you are the only participant).");
+                    formatter.WriteError(CommandNames.Messages.NoReplyRecipients);
                     Environment.Exit(1);
                     return;
                 }
@@ -102,7 +102,7 @@ public static class ReplyCommand
                 }
 
                 tx.Commit();
-                formatter.WriteSuccess($"Reply sent (ID: {newMessageId}).");
+                formatter.WriteSuccess(CommandNames.Messages.ReplySent(newMessageId));
             }
             catch (Exception ex)
             {

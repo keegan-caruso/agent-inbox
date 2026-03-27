@@ -34,7 +34,7 @@ public static class DeregisterCommand
                 if (!reader.Read())
                 {
                     reader.Close();
-                    formatter.WriteError($"Agent '{agentId}' not found.");
+                    formatter.WriteError(CommandNames.Messages.AgentNotFound(agentId));
                     Environment.Exit(1);
                     return;
                 }
@@ -44,7 +44,7 @@ public static class DeregisterCommand
 
                 if (alreadyDeregistered)
                 {
-                    formatter.WriteError($"Agent '{agentId}' is already deregistered.");
+                    formatter.WriteError(CommandNames.Messages.AgentAlreadyDeregistered(agentId));
                     Environment.Exit(1);
                     return;
                 }
@@ -53,7 +53,7 @@ public static class DeregisterCommand
                 updateCmd.CommandText = "UPDATE agents SET deregistered_at = datetime('now') WHERE id = @id";
                 updateCmd.Parameters.AddWithValue("@id", agentId);
                 updateCmd.ExecuteNonQuery();
-                formatter.WriteSuccess($"Agent '{agentId}' deregistered.");
+                formatter.WriteSuccess(CommandNames.Messages.AgentDeregistered(agentId));
             }
             catch (Exception ex)
             {
