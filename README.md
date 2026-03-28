@@ -8,6 +8,11 @@ A CLI tool for inter-agent communication on a single machine, backed by a local 
 
 The system is intended for mutually trusted local processes. Capability tokens authorize message actions; agent IDs are addresses, not proof of authority. Agent discovery through `agent-inbox agents` is intentionally allowed.
 
+## Known Limitations
+
+- Capability-token schema changes currently assume a fresh database.
+- Database migration and backward compatibility for older databases are not handled yet.
+
 ## Requirements
 
 - .NET 10 SDK

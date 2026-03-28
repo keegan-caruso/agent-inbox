@@ -42,7 +42,7 @@ public sealed class IntegrationTests : IDisposable
         await Assert.That(registration.Message).IsEqualTo("Agent 'alice' registered successfully.");
         await Assert.That(registration.AgentId).IsEqualTo("alice");
         await Assert.That(parsesAsGuid).IsTrue();
-        await Assert.That(registration.CapabilityToken.Split('-')[2][0]).IsEqualTo('7');
+        await Assert.That(IsVersion7Guid(registration.CapabilityToken)).IsTrue();
 
         using var ctx = CreateContext();
         var conn = ctx.Connection;
@@ -403,6 +403,12 @@ public sealed class IntegrationTests : IDisposable
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(capabilityToken));
         return Convert.ToHexStringLower(hash);
     }
+
+    private static bool IsVersion7Guid(string capabilityToken) =>
+        Guid.TryParse(capabilityToken, out _)
+        && capabilityToken.Split('-') is [_, _, var versionSegment, ..]
+        && versionSegment.Length > 0
+        && versionSegment[0] == '7';
 
     private static T Scalar<T>(SqliteConnection conn, string sql)
     {
