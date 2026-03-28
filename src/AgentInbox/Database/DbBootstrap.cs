@@ -4,6 +4,9 @@ namespace AgentInbox.Database;
 
 public static class DbBootstrap
 {
+    private const string FreshDatabaseRequiredMessage =
+        "This version requires a fresh database. Migration/backward compatibility is not handled yet.";
+
     public static void EnsureSchema(SqliteConnection connection)
     {
         using var cmd = connection.CreateCommand();
@@ -14,6 +17,8 @@ public static class DbBootstrap
             CREATE TABLE IF NOT EXISTS agents (
                 id              TEXT PRIMARY KEY,
                 display_name    TEXT,
+                capability_token_hash TEXT NOT NULL,
+                capability_token_created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 registered_at   TEXT NOT NULL DEFAULT (datetime('now')),
                 deregistered_at TEXT
             );
@@ -35,5 +40,28 @@ public static class DbBootstrap
             );
             """;
         cmd.ExecuteNonQuery();
+
+        ValidateAgentSchema(connection);
+
+        using var indexCmd = connection.CreateCommand();
+        indexCmd.CommandText = """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_agents_capability_token_hash
+                ON agents (capability_token_hash);
+            """;
+        indexCmd.ExecuteNonQuery();
+    }
+
+    private static void ValidateAgentSchema(SqliteConnection connection)
+    {
+        using var pragmaCmd = connection.CreateCommand();
+        pragmaCmd.CommandText = "PRAGMA table_info(agents)";
+
+        var columns = new HashSet<string>(StringComparer.Ordinal);
+        using var reader = pragmaCmd.ExecuteReader();
+        while (reader.Read())
+            columns.Add(reader.GetString(1));
+
+        if (!columns.Contains("capability_token_hash") || !columns.Contains("capability_token_created_at"))
+            throw new InvalidOperationException(FreshDatabaseRequiredMessage);
     }
 }

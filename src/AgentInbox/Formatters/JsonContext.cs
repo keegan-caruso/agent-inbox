@@ -11,6 +11,7 @@ namespace AgentInbox.Formatters;
 [JsonSerializable(typeof(List<MessageRecipient>))]
 [JsonSerializable(typeof(InboxEntry))]
 [JsonSerializable(typeof(List<InboxEntry>))]
+[JsonSerializable(typeof(RegistrationResult))]
 [JsonSerializable(typeof(SuccessResult))]
 [JsonSerializable(typeof(ErrorResult))]
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]

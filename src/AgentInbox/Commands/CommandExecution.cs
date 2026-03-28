@@ -1,5 +1,7 @@
 using System.CommandLine;
+using System.Diagnostics.CodeAnalysis;
 using AgentInbox.Formatters;
+using AgentInbox.Security;
 using Microsoft.Data.Sqlite;
 
 namespace AgentInbox.Commands;
@@ -14,6 +16,47 @@ internal static class CommandExecution
 
     public static int Fail(IOutputFormatter formatter, Exception exception) =>
         Fail(formatter, exception.Message);
+
+    public static string? ResolveCapabilityToken(ParseResult parseResult, Option<string?> tokenOption)
+    {
+        var cliToken = parseResult.GetValue(tokenOption);
+        return cliToken ?? Environment.GetEnvironmentVariable(CommandNames.CapabilityTokenEnvVar);
+    }
+
+    public static bool TryResolveActiveAgentId(
+        SqliteConnection conn,
+        ParseResult parseResult,
+        Option<string?> tokenOption,
+        IOutputFormatter formatter,
+        [NotNullWhen(true)] out string? agentId)
+    {
+        var capabilityToken = ResolveCapabilityToken(parseResult, tokenOption);
+        if (string.IsNullOrWhiteSpace(capabilityToken))
+        {
+            agentId = null;
+            Fail(formatter, CommandNames.Messages.CapabilityTokenRequired);
+            return false;
+        }
+
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT id
+            FROM agents
+            WHERE capability_token_hash = @capabilityTokenHash
+              AND deregistered_at IS NULL
+            """;
+        cmd.Parameters.AddWithValue("@capabilityTokenHash", CapabilityTokens.Hash(capabilityToken));
+
+        if (cmd.ExecuteScalar() is not string resolvedAgentId)
+        {
+            agentId = null;
+            Fail(formatter, CommandNames.Messages.InvalidCapabilityToken);
+            return false;
+        }
+
+        agentId = resolvedAgentId;
+        return true;
+    }
 
     public static bool IsActiveAgent(SqliteConnection conn, string agentId)
     {

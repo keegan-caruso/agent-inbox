@@ -20,6 +20,9 @@ public sealed class NdjsonFormatter : IOutputFormatter
             Console.WriteLine(JsonSerializer.Serialize(entry, JsonContext.Default.InboxEntry));
     }
 
+    public void WriteRegistration(RegistrationResult result) =>
+        Console.WriteLine(JsonSerializer.Serialize(result, JsonContext.Default.RegistrationResult));
+
     public void WriteSuccess(string message) =>
         Console.WriteLine(JsonSerializer.Serialize(new SuccessResult { Message = message }, JsonContext.Default.SuccessResult));
 

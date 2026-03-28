@@ -14,6 +14,9 @@ public sealed class JsonFormatter : IOutputFormatter
     public void WriteInbox(IReadOnlyList<InboxEntry> entries) =>
         Console.WriteLine(JsonSerializer.Serialize(new List<InboxEntry>(entries), JsonContext.Default.ListInboxEntry));
 
+    public void WriteRegistration(RegistrationResult result) =>
+        Console.WriteLine(JsonSerializer.Serialize(result, JsonContext.Default.RegistrationResult));
+
     public void WriteSuccess(string message) =>
         Console.WriteLine(JsonSerializer.Serialize(new SuccessResult { Message = message }, JsonContext.Default.SuccessResult));
 

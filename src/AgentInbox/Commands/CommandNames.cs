@@ -15,6 +15,8 @@ internal static class CommandNames
     public const string DbPath = "--db-path";
     public const string Format = "--format";
     public const string FormatAlias = "-f";
+    public const string Token = "--token";
+    public const string CapabilityTokenEnvVar = "AGENT_INBOX_CAPABILITY_TOKEN";
 
     // Shared arguments
     public const string AgentIdArg = "agent-id";
@@ -23,8 +25,7 @@ internal static class CommandNames
     // register options
     public const string DisplayName = "--display-name";
 
-    // send / reply options
-    public const string From = "--from";
+    // messaging options
     public const string To = "--to";
     public const string Subject = "--subject";
     public const string Body = "--body";
@@ -32,9 +33,6 @@ internal static class CommandNames
 
     // inbox options
     public const string UnreadOnly = "--unread-only";
-
-    // read options
-    public const string As = "--as";
 
     internal static class Messages
     {
@@ -54,6 +52,8 @@ internal static class CommandNames
         public static string SenderNotActive(string id) => $"Sender '{id}' is not an active registered agent.";
         public static string RecipientNotActive(string id) => $"Recipient '{id}' is not an active registered agent.";
         public static string MessageSent(long id) => $"Message sent (ID: {id}).";
+        public const string CapabilityTokenRequired = "Capability token is required.";
+        public const string InvalidCapabilityToken = "Invalid token.";
 
         // reply
         public static string MessageNotFound(long id) => $"Message {id} not found.";
@@ -72,14 +72,15 @@ internal static class CommandNames
         public const string Register = "Register an agent";
         public const string Deregister = "Deregister (soft-delete) an agent";
         public const string Agents = "List all active agents";
-        public const string Send = "Send a message";
-        public const string Reply = "Reply to a message";
-        public const string Inbox = "List messages in an agent's inbox";
-        public const string Read = "Read a specific message and mark it as read";
+        public const string Send = "Send a message using a capability token";
+        public const string Reply = "Reply to a message using a capability token";
+        public const string Inbox = "List messages for the inbox authorized by a capability token";
+        public const string Read = "Read a specific message and mark it as read using a capability token";
 
         // Global option descriptions
         public const string DbPath = "Path to the SQLite database file";
         public const string Format = "Output format: plain, json, or ndjson";
+        public const string CapabilityToken = $"Capability token (or {CapabilityTokenEnvVar})";
 
         // Argument descriptions
         public const string AgentIdArg = "The unique agent identifier";
@@ -89,21 +90,15 @@ internal static class CommandNames
         public const string DisplayName = "Optional display name for the agent";
 
         // send option descriptions
-        public const string SendFrom = "Sender agent ID";
         public const string SendTo = "Comma-separated recipient agent IDs";
         public const string Subject = "Message subject";
         public const string SendBody = "Message body";
 
         // reply option descriptions
-        public const string ReplyFrom = "Replying agent ID";
         public const string ToMessage = "Message ID to reply to";
         public const string ReplyBody = "Reply body";
 
         // inbox option descriptions
-        public const string InboxAgentId = "Agent ID to retrieve inbox for";
         public const string UnreadOnly = "Show only unread messages";
-
-        // read option descriptions
-        public const string ReadAgentId = "Agent ID reading the message";
     }
 }
