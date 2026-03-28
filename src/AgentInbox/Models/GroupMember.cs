@@ -1,7 +1,3 @@
 namespace AgentInbox.Models;
 
-public sealed class GroupMember
-{
-    public required string AgentId { get; init; }
-    public string? DisplayName { get; init; }
-}
+public sealed record GroupMember(string AgentId, string? DisplayName);

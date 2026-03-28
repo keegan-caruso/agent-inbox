@@ -1,7 +1,3 @@
 namespace AgentInbox.Models;
 
-public sealed class Group
-{
-    public required string Id { get; init; }
-    public required string CreatedAt { get; init; }
-}
+public sealed record Group(string Id, string CreatedAt);

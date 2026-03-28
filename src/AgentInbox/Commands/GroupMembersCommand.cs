@@ -41,11 +41,9 @@ public static class GroupMembersCommand
                 var members = new List<GroupMember>();
                 while (reader.Read())
                 {
-                    members.Add(new GroupMember
-                    {
-                        AgentId = reader.GetString(0),
-                        DisplayName = reader.IsDBNull(1) ? null : reader.GetString(1)
-                    });
+                    members.Add(new GroupMember(
+                        reader.GetString(0),
+                        reader.IsDBNull(1) ? null : reader.GetString(1)));
                 }
 
                 formatter.WriteGroupMembers(groupId, members);

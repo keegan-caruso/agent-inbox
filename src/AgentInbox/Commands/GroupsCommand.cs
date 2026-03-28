@@ -29,11 +29,9 @@ public static class GroupsCommand
                 var groups = new List<Group>();
                 while (reader.Read())
                 {
-                    groups.Add(new Group
-                    {
-                        Id = reader.GetString(0),
-                        CreatedAt = reader.GetString(1)
-                    });
+                    groups.Add(new Group(
+                        reader.GetString(0),
+                        reader.GetString(1)));
                 }
 
                 formatter.WriteGroups(groups);
