@@ -8,6 +8,8 @@ A CLI tool for inter-agent communication on a single machine, backed by a local 
 
 The system is intended for mutually trusted local processes. Capability tokens authorize message actions; agent IDs are addresses, not proof of authority. Agent discovery through `agent-inbox agents` is intentionally allowed.
 
+Groups are named recipient sets with persistent membership. Groups are reusable send targets and are expanded to active member agents at send time. They are not shared inboxes or special conversation threads.
+
 ## Known Limitations
 
 - Capability-token schema changes currently assume a fresh database.
@@ -85,13 +87,68 @@ agent-inbox agents --format json
 
 Discovery is intentionally public; this command does not require a capability token.
 
-#### `send --token <capability-token> --to <agent-id[,agent-id,...]> --body <text> [--subject <text>]`
+#### `group-create <group-id>`
 
-Send a message from the agent authorized by the capability token to one or more recipients.
+Create a group.
+
+```bash
+agent-inbox group-create engineering
+```
+
+#### `group-delete <group-id>`
+
+Delete a group.
+
+```bash
+agent-inbox group-delete engineering
+```
+
+#### `groups`
+
+List all active groups.
+
+```bash
+agent-inbox groups
+agent-inbox groups --format json
+```
+
+#### `group-add-member <group-id> <agent-id>`
+
+Add an agent to a group.
+
+```bash
+agent-inbox group-add-member engineering alice
+```
+
+#### `group-remove-member <group-id> <agent-id>`
+
+Remove an agent from a group.
+
+```bash
+agent-inbox group-remove-member engineering alice
+```
+
+#### `group-members <group-id>`
+
+List members of a group.
+
+```bash
+agent-inbox group-members engineering
+agent-inbox group-members engineering --format json
+```
+
+#### `send --token <capability-token> --to <recipient[,recipient,...]> --body <text> [--subject <text>]`
+
+Send a message from the agent authorized by the capability token to one or more recipients. A recipient can be either:
+
+- an agent ID (for direct delivery)
+- `group:<group-id>` (expanded to active member agents at send time)
 
 ```bash
 agent-inbox send --token "$ALICE_TOKEN" --to bob --subject "Hello" --body "Hi Bob!"
 agent-inbox send --token "$ALICE_TOKEN" --to bob,carol --body "Group message"
+agent-inbox send --token "$ALICE_TOKEN" --to group:engineering --body "Deploy at 5"
+agent-inbox send --token "$ALICE_TOKEN" --to bob,group:engineering --body "Please review"
 ```
 
 #### `reply --token <capability-token> --to-message <message-id> --body <text>`
@@ -133,6 +190,8 @@ The SQLite database is created automatically on first use. Schema:
 - **agents**: Registered agents with optional display names, capability token hashes, token creation timestamps, and soft-delete support
 - **messages**: Messages with sender, subject, body, and optional reply threading
 - **message_recipients**: Many-to-many join table tracking delivery and read status
+- **groups**: Named recipient sets (soft-delete supported)
+- **group_members**: Group membership edges between groups and agents
 
 This schema change currently assumes a fresh database. Database migration and backward compatibility for older databases are not handled yet.
 
