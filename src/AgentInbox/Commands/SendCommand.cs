@@ -8,14 +8,14 @@ public static class SendCommand
 {
     public static Command Build(Option<string> dbPathOption, Option<OutputFormat> formatOption)
     {
-        var fromOpt = new Option<string>(CommandNames.From) { Required = true, Description = CommandNames.Descriptions.SendFrom };
+        var tokenOpt = new Option<string?>(CommandNames.Token) { Description = CommandNames.Descriptions.CapabilityToken };
         var toOpt = new Option<string>(CommandNames.To) { Required = true, Description = CommandNames.Descriptions.SendTo };
         var subjectOpt = new Option<string?>(CommandNames.Subject) { Description = CommandNames.Descriptions.Subject };
         var bodyOpt = new Option<string>(CommandNames.Body) { Required = true, Description = CommandNames.Descriptions.SendBody };
 
         var cmd = new Command(CommandNames.Send, CommandNames.Descriptions.Send)
         {
-            fromOpt,
+            tokenOpt,
             toOpt,
             subjectOpt,
             bodyOpt
@@ -23,7 +23,6 @@ public static class SendCommand
 
         cmd.SetAction((ParseResult parseResult) =>
         {
-            var from = parseResult.GetValue(fromOpt)!;
             var to = parseResult.GetValue(toOpt)!;
             var subject = parseResult.GetValue(subjectOpt);
             var body = parseResult.GetValue(bodyOpt)!;
@@ -47,8 +46,8 @@ public static class SendCommand
                 using var ctx = new DbContext(dbPath);
                 var conn = ctx.Connection;
 
-                if (!CommandExecution.IsActiveAgent(conn, from))
-                    return CommandExecution.Fail(formatter, CommandNames.Messages.SenderNotActive(from));
+                if (!CommandExecution.TryResolveActiveAgentId(conn, parseResult, tokenOpt, formatter, out var senderId))
+                    return 1;
 
                 var activeRecipientIds = CommandExecution.GetActiveAgentIds(conn, uniqueRecipientIds);
                 foreach (var recipientId in uniqueRecipientIds)
@@ -62,7 +61,7 @@ public static class SendCommand
                 using var insertMsgCmd = conn.CreateCommand();
                 insertMsgCmd.Transaction = tx;
                 insertMsgCmd.CommandText = "INSERT INTO messages (sender_id, subject, body) VALUES (@senderId, @subject, @body); SELECT last_insert_rowid();";
-                insertMsgCmd.Parameters.AddWithValue("@senderId", from);
+                insertMsgCmd.Parameters.AddWithValue("@senderId", senderId);
                 insertMsgCmd.Parameters.AddWithValue("@subject", (object?)subject ?? DBNull.Value);
                 insertMsgCmd.Parameters.AddWithValue("@body", body);
                 var messageId = (long)(insertMsgCmd.ExecuteScalar() ?? throw new InvalidOperationException("Failed to insert message"));

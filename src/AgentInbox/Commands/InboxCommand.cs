@@ -9,18 +9,17 @@ public static class InboxCommand
 {
     public static Command Build(Option<string> dbPathOption, Option<OutputFormat> formatOption)
     {
-        var agentIdArg = new Argument<string>(CommandNames.AgentIdArg) { Description = CommandNames.Descriptions.InboxAgentId };
+        var tokenOpt = new Option<string?>(CommandNames.Token) { Description = CommandNames.Descriptions.CapabilityToken };
         var unreadOnlyOpt = new Option<bool>(CommandNames.UnreadOnly) { Description = CommandNames.Descriptions.UnreadOnly };
 
         var cmd = new Command(CommandNames.Inbox, CommandNames.Descriptions.Inbox)
         {
-            agentIdArg,
+            tokenOpt,
             unreadOnlyOpt
         };
 
         cmd.SetAction((ParseResult parseResult) =>
         {
-            var agentId = parseResult.GetValue(agentIdArg)!;
             var unreadOnly = parseResult.GetValue(unreadOnlyOpt);
             var dbPath = parseResult.GetValue(dbPathOption)!;
             var format = parseResult.GetValue(formatOption);
@@ -30,8 +29,8 @@ public static class InboxCommand
                 using var ctx = new DbContext(dbPath);
                 var conn = ctx.Connection;
 
-                if (!CommandExecution.IsActiveAgent(conn, agentId))
-                    return CommandExecution.Fail(formatter, CommandNames.Messages.AgentNotActive(agentId));
+                if (!CommandExecution.TryResolveActiveAgentId(conn, parseResult, tokenOpt, formatter, out var agentId))
+                    return 1;
 
                 var sql = """
                     SELECT m.id, m.sender_id, m.subject, m.body, m.reply_to_id, m.created_at, mr.is_read

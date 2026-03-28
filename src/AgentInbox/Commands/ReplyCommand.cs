@@ -8,20 +8,19 @@ public static class ReplyCommand
 {
     public static Command Build(Option<string> dbPathOption, Option<OutputFormat> formatOption)
     {
-        var fromOpt = new Option<string>(CommandNames.From) { Required = true, Description = CommandNames.Descriptions.ReplyFrom };
+        var tokenOpt = new Option<string?>(CommandNames.Token) { Description = CommandNames.Descriptions.CapabilityToken };
         var toMessageOpt = new Option<long>(CommandNames.ToMessage) { Required = true, Description = CommandNames.Descriptions.ToMessage };
         var bodyOpt = new Option<string>(CommandNames.Body) { Required = true, Description = CommandNames.Descriptions.ReplyBody };
 
         var cmd = new Command(CommandNames.Reply, CommandNames.Descriptions.Reply)
         {
-            fromOpt,
+            tokenOpt,
             toMessageOpt,
             bodyOpt
         };
 
         cmd.SetAction((ParseResult parseResult) =>
         {
-            var from = parseResult.GetValue(fromOpt)!;
             var toMessage = parseResult.GetValue(toMessageOpt);
             var body = parseResult.GetValue(bodyOpt)!;
             var dbPath = parseResult.GetValue(dbPathOption)!;
@@ -32,8 +31,8 @@ public static class ReplyCommand
                 using var ctx = new DbContext(dbPath);
                 var conn = ctx.Connection;
 
-                if (!CommandExecution.IsActiveAgent(conn, from))
-                    return CommandExecution.Fail(formatter, CommandNames.Messages.SenderNotActive(from));
+                if (!CommandExecution.TryResolveActiveAgentId(conn, parseResult, tokenOpt, formatter, out var senderId))
+                    return 1;
 
                 using var msgCmd = conn.CreateCommand();
                 msgCmd.CommandText = "SELECT id, sender_id, subject FROM messages WHERE id = @id";
@@ -54,8 +53,8 @@ public static class ReplyCommand
                     originalRecipients.Add(recipientsReader.GetString(0));
                 recipientsReader.Close();
 
-                if (from != originalSenderId && !originalRecipients.Contains(from))
-                    return CommandExecution.Fail(formatter, CommandNames.Messages.SenderNotParticipant(from, toMessage));
+                if (senderId != originalSenderId && !originalRecipients.Contains(senderId))
+                    return CommandExecution.Fail(formatter, CommandNames.Messages.SenderNotParticipant(senderId, toMessage));
 
                 var activeParticipantIds = CommandExecution.GetActiveAgentIds(conn, originalRecipients);
                 var replyRecipients = new HashSet<string>(activeParticipantIds, StringComparer.Ordinal);
@@ -63,7 +62,7 @@ public static class ReplyCommand
                 if (CommandExecution.IsActiveAgent(conn, originalSenderId))
                     replyRecipients.Add(originalSenderId);
 
-                replyRecipients.Remove(from);
+                replyRecipients.Remove(senderId);
 
                 if (replyRecipients.Count == 0)
                     return CommandExecution.Fail(formatter, CommandNames.Messages.NoReplyRecipients);
@@ -77,7 +76,7 @@ public static class ReplyCommand
                 using var insertMsgCmd = conn.CreateCommand();
                 insertMsgCmd.Transaction = tx;
                 insertMsgCmd.CommandText = "INSERT INTO messages (sender_id, subject, body, reply_to_id) VALUES (@senderId, @subject, @body, @replyToId); SELECT last_insert_rowid();";
-                insertMsgCmd.Parameters.AddWithValue("@senderId", from);
+                insertMsgCmd.Parameters.AddWithValue("@senderId", senderId);
                 insertMsgCmd.Parameters.AddWithValue("@subject", (object?)replySubject ?? DBNull.Value);
                 insertMsgCmd.Parameters.AddWithValue("@body", body);
                 insertMsgCmd.Parameters.AddWithValue("@replyToId", toMessage);

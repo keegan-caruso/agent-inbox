@@ -14,6 +14,8 @@ public static class DbBootstrap
             CREATE TABLE IF NOT EXISTS agents (
                 id              TEXT PRIMARY KEY,
                 display_name    TEXT,
+                capability_token_hash TEXT NOT NULL,
+                capability_token_created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 registered_at   TEXT NOT NULL DEFAULT (datetime('now')),
                 deregistered_at TEXT
             );
@@ -33,6 +35,9 @@ public static class DbBootstrap
                 is_read      INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (message_id, recipient_id)
             );
+
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_agents_capability_token_hash
+                ON agents (capability_token_hash);
             """;
         cmd.ExecuteNonQuery();
     }

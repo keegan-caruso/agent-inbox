@@ -1,6 +1,7 @@
 using System.CommandLine;
 using AgentInbox.Database;
 using AgentInbox.Formatters;
+using AgentInbox.Security;
 
 namespace AgentInbox.Commands;
 
@@ -33,16 +34,24 @@ public static class RegisterCommand
                 checkCmd.CommandText = "SELECT id, deregistered_at FROM agents WHERE id = @id";
                 checkCmd.Parameters.AddWithValue("@id", agentId);
                 using var reader = checkCmd.ExecuteReader();
+                var capabilityToken = CapabilityTokens.Generate();
+                var capabilityTokenHash = CapabilityTokens.Hash(capabilityToken);
 
                 if (!reader.Read())
                 {
                     reader.Close();
                     using var insertCmd = conn.CreateCommand();
-                    insertCmd.CommandText = "INSERT INTO agents (id, display_name) VALUES (@id, @displayName)";
+                    insertCmd.CommandText = "INSERT INTO agents (id, display_name, capability_token_hash) VALUES (@id, @displayName, @capabilityTokenHash)";
                     insertCmd.Parameters.AddWithValue("@id", agentId);
                     insertCmd.Parameters.AddWithValue("@displayName", (object?)displayName ?? DBNull.Value);
+                    insertCmd.Parameters.AddWithValue("@capabilityTokenHash", capabilityTokenHash);
                     insertCmd.ExecuteNonQuery();
-                    formatter.WriteSuccess(CommandNames.Messages.AgentRegistered(agentId));
+                    formatter.WriteRegistration(new RegistrationResult
+                    {
+                        Message = CommandNames.Messages.AgentRegistered(agentId),
+                        AgentId = agentId,
+                        CapabilityToken = capabilityToken
+                    });
                 }
                 else
                 {
@@ -50,25 +59,43 @@ public static class RegisterCommand
                     reader.Close();
 
                     if (!isDeregistered)
-                    {
-                        formatter.WriteSuccess(CommandNames.Messages.AgentAlreadyRegistered(agentId));
-                        return 0;
-                    }
+                        return CommandExecution.Fail(formatter, CommandNames.Messages.AgentAlreadyRegistered(agentId));
 
                     using var reactivateCmd = conn.CreateCommand();
                     reactivateCmd.Parameters.AddWithValue("@id", agentId);
+                    reactivateCmd.Parameters.AddWithValue("@capabilityTokenHash", capabilityTokenHash);
                     if (displayName is null)
                     {
-                        reactivateCmd.CommandText = "UPDATE agents SET deregistered_at = NULL, registered_at = datetime('now') WHERE id = @id";
+                        reactivateCmd.CommandText = """
+                            UPDATE agents
+                            SET deregistered_at = NULL,
+                                capability_token_hash = @capabilityTokenHash,
+                                capability_token_created_at = datetime('now'),
+                                registered_at = datetime('now')
+                            WHERE id = @id
+                            """;
                     }
                     else
                     {
-                        reactivateCmd.CommandText = "UPDATE agents SET deregistered_at = NULL, display_name = @displayName, registered_at = datetime('now') WHERE id = @id";
+                        reactivateCmd.CommandText = """
+                            UPDATE agents
+                            SET deregistered_at = NULL,
+                                display_name = @displayName,
+                                capability_token_hash = @capabilityTokenHash,
+                                capability_token_created_at = datetime('now'),
+                                registered_at = datetime('now')
+                            WHERE id = @id
+                            """;
                         reactivateCmd.Parameters.AddWithValue("@displayName", displayName);
                     }
 
                     reactivateCmd.ExecuteNonQuery();
-                    formatter.WriteSuccess(CommandNames.Messages.AgentReactivated(agentId));
+                    formatter.WriteRegistration(new RegistrationResult
+                    {
+                        Message = CommandNames.Messages.AgentReactivated(agentId),
+                        AgentId = agentId,
+                        CapabilityToken = capabilityToken
+                    });
                 }
 
                 return 0;
