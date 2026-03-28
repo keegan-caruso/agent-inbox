@@ -1,10 +1,11 @@
 using AgentInbox;
 using AgentInbox.Database;
 using Microsoft.Data.Sqlite;
-using Xunit;
+using TUnit.Core;
 
 namespace AgentInbox.Tests;
 
+[NotInParallel]
 public sealed class IntegrationTests : IDisposable
 {
     private readonly string _dbPath;
@@ -23,35 +24,35 @@ public sealed class IntegrationTests : IDisposable
 
     private DbContext CreateContext() => new DbContext(_dbPath);
 
-    [Fact]
+    [Test]
     public async Task Register_NewAgent_InsertsRecord()
     {
         var result = await InvokeAsync("register", "alice", "--display-name", "Alice");
 
-        Assert.Equal(0, result.ExitCode);
+        await Assert.That(result.ExitCode).IsEqualTo(0);
 
         using var ctx = CreateContext();
         var conn = ctx.Connection;
         var count = Scalar<long>(conn, "SELECT COUNT(*) FROM agents WHERE id='alice' AND deregistered_at IS NULL");
-        Assert.Equal(1L, count);
+        await Assert.That(count).IsEqualTo(1L);
     }
 
-    [Fact]
+    [Test]
     public async Task Deregister_SetsDeregisteredAt()
     {
         await InvokeAsync("register", "bob");
         var result = await InvokeAsync("deregister", "bob");
 
-        Assert.Equal(0, result.ExitCode);
+        await Assert.That(result.ExitCode).IsEqualTo(0);
 
         using var ctx = CreateContext();
         var conn = ctx.Connection;
 
         var deregisteredAt = Scalar<string>(conn, "SELECT deregistered_at FROM agents WHERE id='bob'");
-        Assert.NotNull(deregisteredAt);
+        await Assert.That(deregisteredAt).IsNotNull();
     }
 
-    [Fact]
+    [Test]
     public async Task Register_ReactivatedAgentWithoutDisplayName_PreservesExistingDisplayName()
     {
         await InvokeAsync("register", "bob", "--display-name", "Bob");
@@ -59,33 +60,33 @@ public sealed class IntegrationTests : IDisposable
 
         var result = await InvokeAsync("register", "bob");
 
-        Assert.Equal(0, result.ExitCode);
+        await Assert.That(result.ExitCode).IsEqualTo(0);
 
         using var ctx = CreateContext();
         var conn = ctx.Connection;
         var displayName = Scalar<string>(conn, "SELECT display_name FROM agents WHERE id='bob' AND deregistered_at IS NULL");
-        Assert.Equal("Bob", displayName);
+        await Assert.That(displayName).IsEqualTo("Bob");
     }
 
-    [Fact]
+    [Test]
     public async Task SendMessage_CreatesMessageAndRecipients()
     {
         await InvokeAsync("register", "alice");
         await InvokeAsync("register", "bob");
         var result = await InvokeAsync("send", "--from", "alice", "--to", "bob,bob", "--subject", "Hello", "--body", "Hi Bob!");
 
-        Assert.Equal(0, result.ExitCode);
+        await Assert.That(result.ExitCode).IsEqualTo(0);
 
         using var ctx = CreateContext();
         var conn = ctx.Connection;
         var msgId = Scalar<long>(conn, "SELECT id FROM messages ORDER BY id DESC LIMIT 1");
         var count = Scalar<long>(conn, $"SELECT COUNT(*) FROM message_recipients WHERE message_id={msgId} AND recipient_id='bob'");
         var totalRecipients = Scalar<long>(conn, $"SELECT COUNT(*) FROM message_recipients WHERE message_id={msgId}");
-        Assert.Equal(1L, count);
-        Assert.Equal(1L, totalRecipients);
+        await Assert.That(count).IsEqualTo(1L);
+        await Assert.That(totalRecipients).IsEqualTo(1L);
     }
 
-    [Fact]
+    [Test]
     public async Task ReadMessage_MarksAsRead_AndRejectsOtherAgents()
     {
         await InvokeAsync("register", "alice");
@@ -103,16 +104,16 @@ public sealed class IntegrationTests : IDisposable
         var ok = await InvokeAsync("read", msgId.ToString(), "--as", "bob");
         var denied = await InvokeAsync("read", msgId.ToString(), "--as", "carol");
 
-        Assert.Equal(0, ok.ExitCode);
-        Assert.Equal(1, denied.ExitCode);
+        await Assert.That(ok.ExitCode).IsEqualTo(0);
+        await Assert.That(denied.ExitCode).IsEqualTo(1);
 
         using var verifyCtx = CreateContext();
         var verifyConn = verifyCtx.Connection;
         var isRead = Scalar<long>(verifyConn, $"SELECT is_read FROM message_recipients WHERE message_id={msgId} AND recipient_id='bob'");
-        Assert.Equal(1L, isRead);
+        await Assert.That(isRead).IsEqualTo(1L);
     }
 
-    [Fact]
+    [Test]
     public async Task Inbox_RequiresActiveAgent()
     {
         await InvokeAsync("register", "active-agent");
@@ -121,11 +122,11 @@ public sealed class IntegrationTests : IDisposable
 
         var result = await InvokeAsync("inbox", "deleted-agent");
 
-        Assert.Equal(1, result.ExitCode);
-        Assert.Contains("active registered agent", result.StdErr);
+        await Assert.That(result.ExitCode).IsEqualTo(1);
+        await Assert.That(result.StdErr).Contains("active registered agent");
     }
 
-    [Fact]
+    [Test]
     public async Task Agents_OnlyReturnsActiveAgents()
     {
         await InvokeAsync("register", "active-agent");
@@ -136,10 +137,10 @@ public sealed class IntegrationTests : IDisposable
         var conn = ctx.Connection;
 
         var count = Scalar<long>(conn, "SELECT COUNT(*) FROM agents WHERE deregistered_at IS NULL");
-        Assert.Equal(1L, count);
+        await Assert.That(count).IsEqualTo(1L);
     }
 
-    [Fact]
+    [Test]
     public async Task ReplyMessage_RequiresParticipant_AndSkipsInactiveRecipients()
     {
         await InvokeAsync("register", "alice");
@@ -156,23 +157,23 @@ public sealed class IntegrationTests : IDisposable
         }
 
         var denied = await InvokeAsync("reply", "--from", "mallory", "--to-message", originalId.ToString(), "--body", "reply");
-        Assert.Equal(1, denied.ExitCode);
+        await Assert.That(denied.ExitCode).IsEqualTo(1);
 
         await InvokeAsync("deregister", "carol");
         var ok = await InvokeAsync("reply", "--from", "bob", "--to-message", originalId.ToString(), "--body", "reply");
 
-        Assert.Equal(0, ok.ExitCode);
+        await Assert.That(ok.ExitCode).IsEqualTo(0);
 
         using var verifyCtx = CreateContext();
         var verifyConn = verifyCtx.Connection;
         var replyId = Scalar<long>(verifyConn, "SELECT id FROM messages ORDER BY id DESC LIMIT 1");
         var replyToId = Scalar<long>(verifyConn, $"SELECT reply_to_id FROM messages WHERE id={replyId}");
-        Assert.Equal(originalId, replyToId);
+        await Assert.That(replyToId).IsEqualTo(originalId);
 
         var aliceRecipientCount = Scalar<long>(verifyConn, $"SELECT COUNT(*) FROM message_recipients WHERE message_id={replyId} AND recipient_id='alice'");
         var carolRecipientCount = Scalar<long>(verifyConn, $"SELECT COUNT(*) FROM message_recipients WHERE message_id={replyId} AND recipient_id='carol'");
-        Assert.Equal(1L, aliceRecipientCount);
-        Assert.Equal(0L, carolRecipientCount);
+        await Assert.That(aliceRecipientCount).IsEqualTo(1L);
+        await Assert.That(carolRecipientCount).IsEqualTo(0L);
     }
 
     private async Task<(int ExitCode, string StdOut, string StdErr)> InvokeAsync(params string[] args)
@@ -185,16 +186,22 @@ public sealed class IntegrationTests : IDisposable
 
         try
         {
+            // Temporarily redirect Console so we can capture the CLI's output for assertions.
+            // The original streams are always restored in the finally block.
+#pragma warning disable TUnit0055
             Console.SetOut(stdout);
             Console.SetError(stderr);
+#pragma warning restore TUnit0055
 
             var exitCode = await AgentInboxCli.InvokeAsync(allArgs);
             return (exitCode, stdout.ToString(), stderr.ToString());
         }
         finally
         {
+#pragma warning disable TUnit0055
             Console.SetOut(originalOut);
             Console.SetError(originalErr);
+#pragma warning restore TUnit0055
         }
     }
 
