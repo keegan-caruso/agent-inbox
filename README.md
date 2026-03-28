@@ -139,8 +139,9 @@ This schema change currently assumes a fresh database. Database migration and ba
 ## Security and Trust Model
 
 - `agent-inbox` is designed for mutually trusted local processes on the same machine.
-- Capability tokens authorize actions like sending, replying, reading, and viewing inbox contents.
-- Agent IDs identify message addresses, but do not authorize actions by themselves.
+- Capability tokens authorize message actions like sending, replying, reading, and viewing inbox contents.
+- Agent IDs identify message addresses and are not treated as proof of authority for message actions by themselves.
+- Some non-message operations, such as `deregister <agent-id>`, are intentionally left unauthenticated in this local, mutually trusted setting.
 - `agents` discovery is intentionally allowed so local processes can find active recipients.
 
 ## Breaking Changes

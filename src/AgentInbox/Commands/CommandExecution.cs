@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Diagnostics.CodeAnalysis;
 using AgentInbox.Formatters;
 using AgentInbox.Security;
 using Microsoft.Data.Sqlite;
@@ -27,12 +28,12 @@ internal static class CommandExecution
         ParseResult parseResult,
         Option<string?> tokenOption,
         IOutputFormatter formatter,
-        out string agentId)
+        [NotNullWhen(true)] out string? agentId)
     {
         var capabilityToken = ResolveCapabilityToken(parseResult, tokenOption);
         if (string.IsNullOrWhiteSpace(capabilityToken))
         {
-            agentId = string.Empty;
+            agentId = null;
             Fail(formatter, CommandNames.Messages.CapabilityTokenRequired);
             return false;
         }
@@ -48,7 +49,7 @@ internal static class CommandExecution
 
         if (cmd.ExecuteScalar() is not string resolvedAgentId)
         {
-            agentId = string.Empty;
+            agentId = null;
             Fail(formatter, CommandNames.Messages.InvalidCapabilityToken);
             return false;
         }

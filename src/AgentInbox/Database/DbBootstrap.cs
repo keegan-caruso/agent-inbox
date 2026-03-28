@@ -4,6 +4,9 @@ namespace AgentInbox.Database;
 
 public static class DbBootstrap
 {
+    private const string FreshDatabaseRequiredMessage =
+        "This version requires a fresh database. Migration/backward compatibility is not handled yet.";
+
     public static void EnsureSchema(SqliteConnection connection)
     {
         using var cmd = connection.CreateCommand();
@@ -35,10 +38,30 @@ public static class DbBootstrap
                 is_read      INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (message_id, recipient_id)
             );
+            """;
+        cmd.ExecuteNonQuery();
 
+        ValidateAgentSchema(connection);
+
+        using var indexCmd = connection.CreateCommand();
+        indexCmd.CommandText = """
             CREATE UNIQUE INDEX IF NOT EXISTS idx_agents_capability_token_hash
                 ON agents (capability_token_hash);
             """;
-        cmd.ExecuteNonQuery();
+        indexCmd.ExecuteNonQuery();
+    }
+
+    private static void ValidateAgentSchema(SqliteConnection connection)
+    {
+        using var pragmaCmd = connection.CreateCommand();
+        pragmaCmd.CommandText = "PRAGMA table_info(agents)";
+
+        var columns = new HashSet<string>(StringComparer.Ordinal);
+        using var reader = pragmaCmd.ExecuteReader();
+        while (reader.Read())
+            columns.Add(reader.GetString(1));
+
+        if (!columns.Contains("capability_token_hash") || !columns.Contains("capability_token_created_at"))
+            throw new InvalidOperationException(FreshDatabaseRequiredMessage);
     }
 }

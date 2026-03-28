@@ -34,12 +34,12 @@ public static class RegisterCommand
                 checkCmd.CommandText = "SELECT id, deregistered_at FROM agents WHERE id = @id";
                 checkCmd.Parameters.AddWithValue("@id", agentId);
                 using var reader = checkCmd.ExecuteReader();
-                var capabilityToken = CapabilityTokens.Generate();
-                var capabilityTokenHash = CapabilityTokens.Hash(capabilityToken);
 
                 if (!reader.Read())
                 {
                     reader.Close();
+                    var capabilityToken = CapabilityTokens.Generate();
+                    var capabilityTokenHash = CapabilityTokens.Hash(capabilityToken);
                     using var insertCmd = conn.CreateCommand();
                     insertCmd.CommandText = "INSERT INTO agents (id, display_name, capability_token_hash) VALUES (@id, @displayName, @capabilityTokenHash)";
                     insertCmd.Parameters.AddWithValue("@id", agentId);
@@ -61,6 +61,8 @@ public static class RegisterCommand
                     if (!isDeregistered)
                         return CommandExecution.Fail(formatter, CommandNames.Messages.AgentAlreadyRegistered(agentId));
 
+                    var capabilityToken = CapabilityTokens.Generate();
+                    var capabilityTokenHash = CapabilityTokens.Hash(capabilityToken);
                     using var reactivateCmd = conn.CreateCommand();
                     reactivateCmd.Parameters.AddWithValue("@id", agentId);
                     reactivateCmd.Parameters.AddWithValue("@capabilityTokenHash", capabilityTokenHash);
