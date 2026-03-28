@@ -141,4 +141,114 @@ public sealed partial class IntegrationTests
         var count = Scalar<long>(conn, "SELECT COUNT(*) FROM agents WHERE deregistered_at IS NULL");
         await Assert.That(count).IsEqualTo(1L);
     }
+
+    [Test]
+    public async Task Send_SupportsGroups_AndDedupesWithDirectRecipients()
+    {
+        var alice = await RegisterAgentAsync("alice");
+        await RegisterAgentAsync("bob");
+        await RegisterAgentAsync("carol");
+
+        await InvokeAsync("group-create", "engineering");
+        await InvokeAsync("group-add-member", "engineering", "bob");
+        await InvokeAsync("group-add-member", "engineering", "carol");
+
+        var send = await InvokeAsync(
+            "send",
+            "--token", alice.CapabilityToken,
+            "--to", "bob,group:engineering,group:engineering",
+            "--body", "hello");
+
+        await Assert.That(send.ExitCode).IsEqualTo(0);
+
+        using var verifyCtx = CreateContext();
+        var conn = verifyCtx.Connection;
+        var messageId = Scalar<long>(conn, "SELECT id FROM messages ORDER BY id DESC LIMIT 1");
+        var recipientCount = Scalar<long>(conn, $"SELECT COUNT(*) FROM message_recipients WHERE message_id = {messageId}");
+        var bobCount = Scalar<long>(conn, $"SELECT COUNT(*) FROM message_recipients WHERE message_id = {messageId} AND recipient_id = 'bob'");
+        var carolCount = Scalar<long>(conn, $"SELECT COUNT(*) FROM message_recipients WHERE message_id = {messageId} AND recipient_id = 'carol'");
+
+        await Assert.That(recipientCount).IsEqualTo(2L);
+        await Assert.That(bobCount).IsEqualTo(1L);
+        await Assert.That(carolCount).IsEqualTo(1L);
+    }
+
+    [Test]
+    public async Task Send_ToGroups_FailsForMissingOrEmptyGroup_AndSkipsInactiveMembers()
+    {
+        var alice = await RegisterAgentAsync("alice");
+        await RegisterAgentAsync("bob");
+        await RegisterAgentAsync("carol");
+
+        var missingGroup = await InvokeAsync(
+            "send",
+            "--token", alice.CapabilityToken,
+            "--to", "group:does-not-exist",
+            "--body", "hello",
+            "--format", "json");
+        await Assert.That(missingGroup.ExitCode).IsEqualTo(1);
+        await Assert.That(ParseError(missingGroup.StdErr)).IsEqualTo("Group 'does-not-exist' not found.");
+
+        await InvokeAsync("group-create", "inactive-only");
+        await InvokeAsync("group-add-member", "inactive-only", "carol");
+        await InvokeAsync("deregister", "carol");
+        var emptyActive = await InvokeAsync(
+            "send",
+            "--token", alice.CapabilityToken,
+            "--to", "group:inactive-only",
+            "--body", "hello",
+            "--format", "json");
+        await Assert.That(emptyActive.ExitCode).IsEqualTo(1);
+        await Assert.That(ParseError(emptyActive.StdErr)).IsEqualTo("Group 'inactive-only' has no active members.");
+
+        await InvokeAsync("group-create", "mixed-members");
+        await InvokeAsync("group-add-member", "mixed-members", "bob");
+        await InvokeAsync("group-add-member", "mixed-members", "carol");
+        var mixedSend = await InvokeAsync(
+            "send",
+            "--token", alice.CapabilityToken,
+            "--to", "group:mixed-members",
+            "--body", "hello");
+        await Assert.That(mixedSend.ExitCode).IsEqualTo(0);
+
+        using var verifyCtx = CreateContext();
+        var conn = verifyCtx.Connection;
+        var messageId = Scalar<long>(conn, "SELECT id FROM messages ORDER BY id DESC LIMIT 1");
+        var bobCount = Scalar<long>(conn, $"SELECT COUNT(*) FROM message_recipients WHERE message_id = {messageId} AND recipient_id = 'bob'");
+        var carolCount = Scalar<long>(conn, $"SELECT COUNT(*) FROM message_recipients WHERE message_id = {messageId} AND recipient_id = 'carol'");
+        await Assert.That(bobCount).IsEqualTo(1L);
+        await Assert.That(carolCount).IsEqualTo(0L);
+    }
+
+    [Test]
+    public async Task Reply_AfterGroupDelivery_KeepsParticipantSemantics()
+    {
+        var alice = await RegisterAgentAsync("alice");
+        var bob = await RegisterAgentAsync("bob");
+        await RegisterAgentAsync("carol");
+
+        await InvokeAsync("group-create", "engineering");
+        await InvokeAsync("group-add-member", "engineering", "bob");
+        await InvokeAsync("group-add-member", "engineering", "carol");
+        await InvokeAsync("send", "--token", alice.CapabilityToken, "--to", "group:engineering", "--body", "original");
+
+        var originalId = 0L;
+        using (var ctx = CreateContext())
+        {
+            originalId = Scalar<long>(ctx.Connection, "SELECT id FROM messages ORDER BY id DESC LIMIT 1");
+        }
+
+        var reply = await InvokeAsync("reply", "--token", bob.CapabilityToken, "--to-message", originalId.ToString(), "--body", "reply");
+        await Assert.That(reply.ExitCode).IsEqualTo(0);
+
+        using var verifyCtx = CreateContext();
+        var conn = verifyCtx.Connection;
+        var replyId = Scalar<long>(conn, "SELECT id FROM messages ORDER BY id DESC LIMIT 1");
+        var replyRecipientCount = Scalar<long>(conn, $"SELECT COUNT(*) FROM message_recipients WHERE message_id = {replyId}");
+        var aliceCount = Scalar<long>(conn, $"SELECT COUNT(*) FROM message_recipients WHERE message_id = {replyId} AND recipient_id = 'alice'");
+        var carolCount = Scalar<long>(conn, $"SELECT COUNT(*) FROM message_recipients WHERE message_id = {replyId} AND recipient_id = 'carol'");
+        await Assert.That(replyRecipientCount).IsEqualTo(2L);
+        await Assert.That(aliceCount).IsEqualTo(1L);
+        await Assert.That(carolCount).IsEqualTo(1L);
+    }
 }

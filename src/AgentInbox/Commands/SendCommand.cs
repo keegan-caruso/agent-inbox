@@ -35,26 +35,14 @@ public static class SendCommand
                 if (recipientIds.Length == 0)
                     return CommandExecution.Fail(formatter, CommandNames.Messages.NoRecipientsSpecified);
 
-                var uniqueRecipientIds = new List<string>();
-                var seenRecipients = new HashSet<string>(StringComparer.Ordinal);
-                foreach (var recipientId in recipientIds)
-                {
-                    if (seenRecipients.Add(recipientId))
-                        uniqueRecipientIds.Add(recipientId);
-                }
-
                 using var ctx = new DbContext(dbPath);
                 var conn = ctx.Connection;
 
                 if (!CommandExecution.TryResolveActiveAgentId(conn, parseResult, tokenOpt, formatter, out var senderId))
                     return 1;
 
-                var activeRecipientIds = CommandExecution.GetActiveAgentIds(conn, uniqueRecipientIds);
-                foreach (var recipientId in uniqueRecipientIds)
-                {
-                    if (!activeRecipientIds.Contains(recipientId))
-                        return CommandExecution.Fail(formatter, CommandNames.Messages.RecipientNotActive(recipientId));
-                }
+                if (!CommandExecution.TryResolveSendRecipients(conn, recipientIds, formatter, out var resolvedRecipientIds))
+                    return 1;
 
                 using var tx = conn.BeginTransaction();
 
@@ -74,7 +62,7 @@ public static class SendCommand
                 recipientIdParam.ParameterName = "@recipientId";
                 insertRecCmd.Parameters.Add(recipientIdParam);
 
-                foreach (var recipientId in uniqueRecipientIds)
+                foreach (var recipientId in resolvedRecipientIds)
                 {
                     recipientIdParam.Value = recipientId;
                     insertRecCmd.ExecuteNonQuery();
