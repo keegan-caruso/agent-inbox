@@ -10,8 +10,7 @@ The system is intended for mutually trusted local processes. Capability tokens a
 
 ## Known Limitations
 
-- Capability-token schema changes currently assume a fresh database.
-- Database migration and backward compatibility for older databases are not handled yet.
+- Migration for older or unversioned databases is not yet implemented; only fresh databases and current-version databases are supported.
 
 ## Requirements
 
@@ -128,13 +127,21 @@ agent-inbox read 1 --token "$ALICE_TOKEN"
 
 ## Database
 
-The SQLite database is created automatically on first use. Schema:
+The SQLite database is created automatically on first use. Schema versioning uses SQLite `PRAGMA user_version`.
+
+- **Fresh database**: initialized to the latest schema and assigned `user_version = 2`.
+- **Current-version database** (`user_version = 2`): opened normally.
+- **Unversioned legacy database** (tables present, `user_version = 0`): rejected; migration is not implemented yet.
+- **Older versioned database** (`user_version < 2`): rejected; migration is not implemented yet.
+- **Newer database** (`user_version > 2`): rejected; created by a future binary this version does not support.
+
+Future schema changes will increment `user_version` and be handled version-to-version. Backward compatibility for older databases is not implemented yet.
+
+Schema tables:
 
 - **agents**: Registered agents with optional display names, capability token hashes, token creation timestamps, and soft-delete support
 - **messages**: Messages with sender, subject, body, and optional reply threading
 - **message_recipients**: Many-to-many join table tracking delivery and read status
-
-This schema change currently assumes a fresh database. Database migration and backward compatibility for older databases are not handled yet.
 
 ## Security and Trust Model
 

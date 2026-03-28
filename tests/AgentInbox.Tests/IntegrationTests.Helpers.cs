@@ -131,6 +131,49 @@ public sealed partial class IntegrationTests
         && versionSegment.Length > 0
         && versionSegment[0] == '7';
 
+    private async Task CreateDbWithVersionAsync(int version)
+    {
+        var connectionStringBuilder = new SqliteConnectionStringBuilder
+        {
+            DataSource = _dbPath
+        };
+
+        await using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
+        await connection.OpenAsync();
+
+        await using var schemaCmd = connection.CreateCommand();
+        schemaCmd.CommandText = """
+            CREATE TABLE agents (
+                id              TEXT PRIMARY KEY,
+                display_name    TEXT,
+                registered_at   TEXT NOT NULL DEFAULT (datetime('now')),
+                deregistered_at TEXT
+            );
+            """;
+        await schemaCmd.ExecuteNonQueryAsync();
+
+        await using var versionCmd = connection.CreateCommand();
+        ArgumentOutOfRangeException.ThrowIfNegative(version);
+        versionCmd.CommandText = $"PRAGMA user_version = {version}";
+        await versionCmd.ExecuteNonQueryAsync();
+    }
+
+    private static async Task<int> GetUserVersionAsync(string dbPath)
+    {
+        var connectionStringBuilder = new SqliteConnectionStringBuilder
+        {
+            DataSource = dbPath
+        };
+
+        await using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
+        await connection.OpenAsync();
+
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = "PRAGMA user_version";
+        return (int)(long)(await cmd.ExecuteScalarAsync())!;
+    }
+
+
     private static T Scalar<T>(SqliteConnection conn, string sql)
     {
         using var cmd = conn.CreateCommand();

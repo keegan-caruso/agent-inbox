@@ -4,16 +4,47 @@ namespace AgentInbox.Database;
 
 public static class DbBootstrap
 {
-    private const string FreshDatabaseRequiredMessage =
-        "This version requires a fresh database. Migration/backward compatibility is not handled yet.";
+    public const int CurrentSchemaVersion = 2;
 
     public static void EnsureSchema(SqliteConnection connection)
     {
+        using var pragmaCmd = connection.CreateCommand();
+        pragmaCmd.CommandText = "PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;";
+        pragmaCmd.ExecuteNonQuery();
+
+        var userVersion = GetUserVersion(connection);
+        var hasUserTables = HasUserTables(connection);
+
+        if (!hasUserTables && userVersion == 0)
+        {
+            CreateCurrentSchema(connection);
+            SetUserVersion(connection, CurrentSchemaVersion);
+        }
+        else if (userVersion == CurrentSchemaVersion)
+        {
+            ValidateCurrentSchema(connection);
+        }
+        else if (hasUserTables && userVersion == 0)
+        {
+            throw new InvalidOperationException(
+                "This database uses an unversioned legacy schema. Migration is not implemented yet.");
+        }
+        else if (userVersion < CurrentSchemaVersion)
+        {
+            throw new InvalidOperationException(
+                $"Database schema version {userVersion} is older than supported version {CurrentSchemaVersion}. Migration is not implemented yet.");
+        }
+        else
+        {
+            throw new InvalidOperationException(
+                $"Database schema version {userVersion} is newer than this application supports ({CurrentSchemaVersion}).");
+        }
+    }
+
+    private static void CreateCurrentSchema(SqliteConnection connection)
+    {
         using var cmd = connection.CreateCommand();
         cmd.CommandText = """
-            PRAGMA journal_mode=WAL;
-            PRAGMA foreign_keys=ON;
-
             CREATE TABLE IF NOT EXISTS agents (
                 id              TEXT PRIMARY KEY,
                 display_name    TEXT,
@@ -41,8 +72,6 @@ public static class DbBootstrap
             """;
         cmd.ExecuteNonQuery();
 
-        ValidateAgentSchema(connection);
-
         using var indexCmd = connection.CreateCommand();
         indexCmd.CommandText = """
             CREATE UNIQUE INDEX IF NOT EXISTS idx_agents_capability_token_hash
@@ -51,7 +80,7 @@ public static class DbBootstrap
         indexCmd.ExecuteNonQuery();
     }
 
-    private static void ValidateAgentSchema(SqliteConnection connection)
+    private static void ValidateCurrentSchema(SqliteConnection connection)
     {
         using var pragmaCmd = connection.CreateCommand();
         pragmaCmd.CommandText = "PRAGMA table_info(agents)";
@@ -62,6 +91,29 @@ public static class DbBootstrap
             columns.Add(reader.GetString(1));
 
         if (!columns.Contains("capability_token_hash") || !columns.Contains("capability_token_created_at"))
-            throw new InvalidOperationException(FreshDatabaseRequiredMessage);
+            throw new InvalidOperationException(
+                "Database schema is corrupted or invalid for the current version.");
+    }
+
+    private static int GetUserVersion(SqliteConnection connection)
+    {
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = "PRAGMA user_version";
+        return (int)(long)cmd.ExecuteScalar()!;
+    }
+
+    private static void SetUserVersion(SqliteConnection connection, int version)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(version);
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = $"PRAGMA user_version = {version}";
+        cmd.ExecuteNonQuery();
+    }
+
+    private static bool HasUserTables(SqliteConnection connection)
+    {
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'";
+        return (long)cmd.ExecuteScalar()! > 0;
     }
 }

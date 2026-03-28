@@ -117,7 +117,27 @@ public sealed partial class IntegrationTests : IDisposable
     }
 
     [Test]
-    public async Task Register_PreCapabilityTokenDatabase_ReturnsFreshDatabaseError()
+    public async Task FreshDb_SetsUserVersionToCurrentSchemaVersion()
+    {
+        await InvokeAsync("register", "alice");
+
+        var version = await GetUserVersionAsync(_dbPath);
+
+        await Assert.That(version).IsEqualTo(DbBootstrap.CurrentSchemaVersion);
+    }
+
+    [Test]
+    public async Task CurrentVersionDb_OpensSuccessfully()
+    {
+        var first = await InvokeAsync("register", "alice");
+        await Assert.That(first.ExitCode).IsEqualTo(0);
+
+        var second = await InvokeAsync("agents", "--format", "json");
+        await Assert.That(second.ExitCode).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task UnversionedLegacyDb_FailsWithMigrationMessage()
     {
         await CreateLegacySchemaAsync();
 
@@ -125,7 +145,32 @@ public sealed partial class IntegrationTests : IDisposable
 
         await Assert.That(result.ExitCode).IsEqualTo(1);
         await Assert.That(ParseError(result.StdErr)).IsEqualTo(
-            "This version requires a fresh database. Migration/backward compatibility is not handled yet.");
+            "This database uses an unversioned legacy schema. Migration is not implemented yet.");
+    }
+
+    [Test]
+    public async Task OlderVersionedDb_FailsWithMigrationMessage()
+    {
+        await CreateDbWithVersionAsync(1);
+
+        var result = await InvokeAsync("register", "alice", "--format", "json");
+
+        await Assert.That(result.ExitCode).IsEqualTo(1);
+        await Assert.That(ParseError(result.StdErr)).IsEqualTo(
+            $"Database schema version 1 is older than supported version {DbBootstrap.CurrentSchemaVersion}. Migration is not implemented yet.");
+    }
+
+    [Test]
+    public async Task NewerVersionedDb_FailsWithNewerSchemaMessage()
+    {
+        var newerVersion = DbBootstrap.CurrentSchemaVersion + 1;
+        await CreateDbWithVersionAsync(newerVersion);
+
+        var result = await InvokeAsync("register", "alice", "--format", "json");
+
+        await Assert.That(result.ExitCode).IsEqualTo(1);
+        await Assert.That(ParseError(result.StdErr)).IsEqualTo(
+            $"Database schema version {newerVersion} is newer than this application supports ({DbBootstrap.CurrentSchemaVersion}).");
     }
 
     [Test]
