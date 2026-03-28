@@ -22,8 +22,11 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      - name: Update apt cache
+        run: sudo apt-get update
+
       - name: Install native AOT prerequisites
-        run: sudo apt-get install -y clang zlib1g-dev
+        run: sudo apt-get install -y --no-install-recommends clang zlib1g-dev
 
       - name: Restore
         run: dotnet restore
