@@ -19,11 +19,9 @@ public sealed class NdjsonFormatter : IOutputFormatter
 
     public void WriteGroupMembers(string groupId, IReadOnlyList<GroupMember> members)
     {
-        Console.WriteLine(JsonSerializer.Serialize(new GroupMembersResult
-        {
-            GroupId = groupId,
-            Members = new List<GroupMember>(members)
-        }, JsonContext.Default.GroupMembersResult));
+        Console.WriteLine(JsonSerializer.Serialize(
+            new GroupMembersResult(groupId, [.. members]),
+            JsonContext.Default.GroupMembersResult));
     }
 
     public void WriteMessage(Message message) =>

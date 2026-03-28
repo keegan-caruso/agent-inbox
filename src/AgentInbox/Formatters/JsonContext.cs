@@ -34,8 +34,4 @@ public sealed class ErrorResult
     public string Error { get; init; } = "";
 }
 
-public sealed class GroupMembersResult
-{
-    public string GroupId { get; init; } = "";
-    public List<GroupMember> Members { get; init; } = [];
-}
+public sealed record GroupMembersResult(string GroupId, List<GroupMember> Members);

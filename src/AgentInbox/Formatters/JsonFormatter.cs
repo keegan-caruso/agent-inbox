@@ -12,11 +12,9 @@ public sealed class JsonFormatter : IOutputFormatter
         Console.WriteLine(JsonSerializer.Serialize(new List<Group>(groups), JsonContext.Default.ListGroup));
 
     public void WriteGroupMembers(string groupId, IReadOnlyList<GroupMember> members) =>
-        Console.WriteLine(JsonSerializer.Serialize(new GroupMembersResult
-        {
-            GroupId = groupId,
-            Members = new List<GroupMember>(members)
-        }, JsonContext.Default.GroupMembersResult));
+        Console.WriteLine(JsonSerializer.Serialize(
+            new GroupMembersResult(groupId, [.. members]),
+            JsonContext.Default.GroupMembersResult));
 
     public void WriteMessage(Message message) =>
         Console.WriteLine(JsonSerializer.Serialize(message, JsonContext.Default.Message));
