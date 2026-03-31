@@ -47,6 +47,7 @@ internal static class CommandNames
         public static string AgentRegistered(string id) => $"Agent '{id}' registered successfully.";
         public static string AgentAlreadyRegistered(string id) => $"Agent '{id}' is already registered.";
         public static string AgentReactivated(string id) => $"Agent '{id}' reactivated.";
+        public static string AgentIdReservedPrefix(string id) => $"Agent ID '{id}' cannot start with 'group:' (reserved prefix).";
 
         // deregister
         public static string AgentNotFound(string id) => $"Agent '{id}' not found.";

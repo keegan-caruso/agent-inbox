@@ -27,6 +27,9 @@ public static class RegisterCommand
             var formatter = FormatterFactory.Create(format);
             try
             {
+                if (agentId.StartsWith("group:", StringComparison.Ordinal))
+                    return CommandExecution.Fail(formatter, CommandNames.Messages.AgentIdReservedPrefix(agentId));
+
                 using var ctx = new DbContext(dbPath);
                 var conn = ctx.Connection;
 

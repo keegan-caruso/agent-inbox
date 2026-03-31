@@ -194,6 +194,29 @@ public sealed partial class IntegrationTests : IDisposable
     }
 
     [Test]
+    public async Task Register_RejectsAgentIdWithGroupPrefix()
+    {
+        var result = await InvokeAsync("register", "group:engineering", "--format", "json");
+
+        await Assert.That(result.ExitCode).IsEqualTo(1);
+        await Assert.That(ParseError(result.StdErr)).IsEqualTo("Agent ID 'group:engineering' cannot start with 'group:' (reserved prefix).");
+    }
+
+    [Test]
+    public async Task GroupCreate_ReactivatesSoftDeletedGroup()
+    {
+        var firstCreate = await InvokeAsync("group-create", "engineering", "--format", "json");
+        var delete = await InvokeAsync("group-delete", "engineering", "--format", "json");
+        var secondCreate = await InvokeAsync("group-create", "engineering", "--format", "json");
+        var groups = await InvokeAsync("groups", "--format", "json");
+
+        await Assert.That(firstCreate.ExitCode).IsEqualTo(0);
+        await Assert.That(delete.ExitCode).IsEqualTo(0);
+        await Assert.That(secondCreate.ExitCode).IsEqualTo(0);
+        await Assert.That(ParseJsonArray(groups.StdOut).Length).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Groups_CanBeManaged_AndListed()
     {
         await RegisterAgentAsync("alice", "Alice");
