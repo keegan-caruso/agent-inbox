@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.Diagnostics.CodeAnalysis;
+using AgentInbox.Diagnostics;
 using AgentInbox.Formatters;
 using AgentInbox.Security;
 using Microsoft.Data.Sqlite;
@@ -16,8 +17,14 @@ internal static class CommandExecution
         return 1;
     }
 
+    public static int Fail(IOutputFormatter formatter, string message, string errorCode)
+    {
+        formatter.WriteError(message, errorCode);
+        return 1;
+    }
+
     public static int Fail(IOutputFormatter formatter, Exception exception) =>
-        Fail(formatter, exception.Message);
+        Fail(formatter, exception.Message, ErrorCode.UnexpectedError);
 
     public static string? ResolveCapabilityToken(ParseResult parseResult, Option<string?> tokenOption)
     {
@@ -36,7 +43,7 @@ internal static class CommandExecution
         if (string.IsNullOrWhiteSpace(capabilityToken))
         {
             agentId = null;
-            Fail(formatter, CommandNames.Messages.CapabilityTokenRequired);
+            Fail(formatter, CommandNames.Messages.CapabilityTokenRequired, ErrorCode.CapabilityTokenRequired);
             return false;
         }
 
@@ -52,7 +59,7 @@ internal static class CommandExecution
         if (cmd.ExecuteScalar() is not string resolvedAgentId)
         {
             agentId = null;
-            Fail(formatter, CommandNames.Messages.InvalidCapabilityToken);
+            Fail(formatter, CommandNames.Messages.InvalidCapabilityToken, ErrorCode.InvalidCapabilityToken);
             return false;
         }
 

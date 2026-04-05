@@ -73,6 +73,8 @@ public static class SearchCommand
     {
         var conn = ctx.Connection;
 
+        Diagnostics.DiagnosticManager.EmitSearchExecuted("text");
+
         using var searchCmd = conn.CreateCommand();
         searchCmd.CommandText = """
             SELECT m.id, m.sender_id, m.subject, m.body, m.reply_to_id, m.created_at, mr.is_read,
@@ -114,6 +116,8 @@ public static class SearchCommand
     {
         if (!ctx.VecLoaded)
             return CommandExecution.Fail(formatter, CommandNames.Messages.SemanticSearchUnavailable);
+
+        Diagnostics.DiagnosticManager.EmitSearchExecuted("semantic");
 
         float[] queryEmbedding;
         if (!string.IsNullOrWhiteSpace(embeddingJson))

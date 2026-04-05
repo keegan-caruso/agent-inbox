@@ -4,9 +4,12 @@ namespace AgentInbox.Database;
 
 public static class DbBootstrap
 {
+    /// <summary>
+    /// Current schema version for migration tracking.
+    /// </summary>
     public const int CurrentSchemaVersion = 1;
 
-    public static void EnsureSchema(SqliteConnection connection, bool vecLoaded = false)
+    public static int EnsureSchema(SqliteConnection connection, bool vecLoaded = false)
     {
         using var pragmaCmd = connection.CreateCommand();
         pragmaCmd.CommandText = "PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;";
@@ -36,7 +39,11 @@ public static class DbBootstrap
             throw new InvalidOperationException(
                 $"Database schema version {userVersion} is newer than this application supports ({CurrentSchemaVersion}).");
         }
+
+        return userVersion == 0 ? CurrentSchemaVersion : userVersion;
     }
+
+    public static int GetSchemaVersion(SqliteConnection connection) => GetUserVersion(connection);
 
     private static void CreateCurrentSchema(SqliteConnection connection, bool vecLoaded = false)
     {

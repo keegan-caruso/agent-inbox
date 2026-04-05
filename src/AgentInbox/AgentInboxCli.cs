@@ -1,5 +1,6 @@
 using System.CommandLine;
 using AgentInbox.Commands;
+using AgentInbox.Diagnostics;
 using AgentInbox.Formatters;
 
 namespace AgentInbox;
@@ -28,9 +29,18 @@ public static class AgentInboxCli
         };
         formatOption.Aliases.Add(CommandNames.FormatAlias);
 
+        var verboseOption = new Option<bool>(CommandNames.Verbose)
+        {
+            Recursive = true,
+            DefaultValueFactory = _ => false,
+            Description = CommandNames.Descriptions.Verbose
+        };
+        verboseOption.Aliases.Add(CommandNames.VerboseAlias);
+
         var rootCommand = new RootCommand(CommandNames.Descriptions.RootCommand);
         rootCommand.Add(dbPathOption);
         rootCommand.Add(formatOption);
+        rootCommand.Add(verboseOption);
 
         rootCommand.Add(RegisterCommand.Build(dbPathOption, formatOption));
         rootCommand.Add(DeregisterCommand.Build(dbPathOption, formatOption));
@@ -51,5 +61,15 @@ public static class AgentInboxCli
         return rootCommand;
     }
 
-    public static Task<int> InvokeAsync(string[] args) => CreateRootCommand().Parse(args).InvokeAsync();
+    public static async Task<int> InvokeAsync(string[] args)
+    {
+        // Simple verbose check - look for the flag in args before parsing
+        var verboseEnabled = args.Contains("--verbose") || args.Contains("-v");
+        if (verboseEnabled)
+            DiagnosticManager.SetVerboseMode(true);
+
+        var rootCommand = CreateRootCommand();
+        var parseResult = rootCommand.Parse(args);
+        return await parseResult.InvokeAsync();
+    }
 }

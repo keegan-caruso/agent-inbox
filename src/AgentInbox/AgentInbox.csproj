@@ -6,7 +6,25 @@
     <PublishAot>true</PublishAot>
     <InvariantGlobalization>true</InvariantGlobalization>
     <OptimizationPreference>Speed</OptimizationPreference>
+
+    <!-- .NET Tool packaging -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>agent-inbox</ToolCommandName>
+    <PackageId>AgentInbox</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Keegan Caruso</Authors>
+    <Description>A CLI tool for inter-agent communication on a single machine, backed by a local SQLite database.</Description>
+    <PackageProjectUrl>https://github.com/keegan-caruso/agent-inbox</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/keegan-caruso/agent-inbox</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>cli;agent;messaging;sqlite;communication</PackageTags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="System.CommandLine" />

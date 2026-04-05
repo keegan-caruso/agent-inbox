@@ -7,8 +7,9 @@ public sealed class DbContext : IDisposable
     private readonly SqliteConnection _connection;
 
     public bool VecLoaded { get; }
+    public int SchemaVersion { get; }
 
-    public DbContext(string dbPath)
+    public DbContext(string dbPath, string dbPathSource = "default")
     {
         var dir = Path.GetDirectoryName(dbPath);
         if (!string.IsNullOrEmpty(dir))
@@ -22,7 +23,10 @@ public sealed class DbContext : IDisposable
         _connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
         _connection.Open();
         VecLoaded = VecExtension.TryLoad(_connection);
-        DbBootstrap.EnsureSchema(_connection, VecLoaded);
+        SchemaVersion = DbBootstrap.EnsureSchema(_connection, VecLoaded);
+
+        // Emit diagnostic event about database opening
+        Diagnostics.DiagnosticManager.EmitDatabaseOpened(dbPath, dbPathSource, SchemaVersion, VecLoaded);
     }
 
     public SqliteConnection Connection => _connection;

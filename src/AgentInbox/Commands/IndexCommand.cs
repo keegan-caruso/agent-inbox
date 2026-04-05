@@ -65,11 +65,15 @@ public static class IndexCommand
                 {
                     if (!SearchCommand.TryParseEmbedding(embeddingJson, formatter, out embedding))
                         return 1;
+
+                    Diagnostics.DiagnosticManager.EmitIndexExecuted("custom-embedding");
                 }
                 else
                 {
                     var text = string.IsNullOrEmpty(subject) ? body! : $"{subject} {body}";
                     embedding = EmbeddingGenerator.Generate(text);
+
+                    Diagnostics.DiagnosticManager.EmitIndexExecuted("auto-generated");
                 }
 
                 if (embedding.Length != EmbeddingGenerator.Dimensions)
