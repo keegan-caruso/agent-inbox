@@ -16,6 +16,8 @@ internal static class CommandNames
     public const string Reply = "reply";
     public const string Inbox = "inbox";
     public const string Read = "read";
+    public const string Search = "search";
+    public const string Index = "index";
 
     // Global options
     public const string DbPath = "--db-path";
@@ -40,6 +42,12 @@ internal static class CommandNames
 
     // inbox options
     public const string UnreadOnly = "--unread-only";
+
+    // search options
+    public const string Query = "--query";
+    public const string Mode = "--mode";
+    public const string Embedding = "--embedding";
+    public const string Limit = "--limit";
 
     internal static class Messages
     {
@@ -84,6 +92,16 @@ internal static class CommandNames
         public const string NoReplyRecipients = "No recipients for the reply (you are the only participant).";
         public static string SenderNotParticipant(string id, long messageId) => $"Sender '{id}' is not a participant in message {messageId} and cannot reply to it.";
         public static string ReplySent(long id) => $"Reply sent (ID: {id}).";
+
+        // search / index
+        public const string SearchQueryRequired = "A --query is required.";
+        public const string SearchEmbeddingRequired = "A --query or --embedding is required for semantic search.";
+        public const string SemanticSearchUnavailable = "Semantic search is unavailable: the sqlite-vec extension could not be loaded.";
+        public const string InvalidEmbeddingJson = "Invalid --embedding value: expected a JSON array of numbers.";
+        public static string EmbeddingDimensionMismatch(int provided, int expected) =>
+            $"Embedding has {provided} dimensions but the schema requires {expected}.";
+        public static string EmbeddingStored(long messageId) => $"Embedding stored for message {messageId}.";
+        public static string MessageNotAccessibleForIndex(long id) => $"Message {id} not found or you are not a participant.";
     }
 
     internal static class Descriptions
@@ -105,6 +123,8 @@ internal static class CommandNames
         public const string Reply = "Reply to a message using a capability token";
         public const string Inbox = "List messages for the inbox authorized by a capability token";
         public const string Read = "Read a specific message and mark it as read using a capability token";
+        public const string Search = "Search inbox messages using full-text (FTS5) or semantic (vector) search";
+        public const string Index = "Store or update the embedding for a message to enable semantic search";
 
         // Global option descriptions
         public const string DbPath = "Path to the SQLite database file";
@@ -130,5 +150,14 @@ internal static class CommandNames
 
         // inbox option descriptions
         public const string UnreadOnly = "Show only unread messages";
+
+        // search option descriptions
+        public const string SearchQuery = "Search query text (used for FTS5 text search, and as fallback for embedding generation in semantic mode)";
+        public const string SearchMode = "Search mode: 'text' (FTS5) or 'semantic' (vector similarity)";
+        public const string SearchEmbedding = "Pre-computed query embedding as a JSON float array (384 dimensions). Overrides built-in embedding generation in semantic mode.";
+        public const string SearchLimit = "Maximum number of results to return";
+
+        // index option descriptions
+        public const string IndexEmbedding = "Pre-computed embedding for the message as a JSON float array (384 dimensions). If omitted, an embedding is generated from the message text.";
     }
 }
