@@ -137,17 +137,19 @@ agent-inbox group-members engineering
 agent-inbox group-members engineering --format json
 ```
 
-#### `group-search <query> [--limit <number>]`
+#### `group-inbox-search <group-id> <query> [--limit <number>]`
 
-Search for groups using semantic similarity. Groups are indexed with automatically generated embeddings based on their IDs.
+Search messages sent to a specific group using semantic similarity. Returns messages ordered by relevance (lower distance = more similar).
+
+This feature uses character n-gram embeddings and vector similarity search to find messages matching the semantic meaning of the query, not just exact keyword matches.
 
 ```bash
-agent-inbox group-search engineer
-agent-inbox group-search engineer --limit 5
-agent-inbox group-search product --format json
+agent-inbox group-inbox-search engineering "authentication issues"
+agent-inbox group-inbox-search engineering "performance problems" --limit 5
+agent-inbox group-inbox-search engineering "deployment" --format json
 ```
 
-The search returns groups ranked by similarity to the query, with a similarity score (higher is better).
+**Note:** This requires the sqlite-vec extension. If unavailable, search commands will fail with an appropriate error message.
 
 #### `send --token <capability-token> --to <recipient[,recipient,...]> --body <text> [--subject <text>]`
 
@@ -204,6 +206,8 @@ The SQLite database is created automatically on first use. Schema:
 - **message_recipients**: Many-to-many join table tracking delivery and read status
 - **groups**: Named recipient sets (soft-delete supported)
 - **group_members**: Group membership edges between groups and agents
+- **message_groups**: Tracks which groups each message was sent to (for semantic search)
+- **message_embeddings**: Vector embeddings of message content (subject + body) for semantic similarity search
 
 This schema change currently assumes a fresh database. Database migration and backward compatibility for older databases are not handled yet.
 

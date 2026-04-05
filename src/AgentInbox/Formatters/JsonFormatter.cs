@@ -16,14 +16,14 @@ public sealed class JsonFormatter : IOutputFormatter
             new GroupMembersResult(groupId, [.. members]),
             JsonContext.Default.GroupMembersResult));
 
-    public void WriteGroupSearchResults(IReadOnlyList<GroupSearchResult> results) =>
-        Console.WriteLine(JsonSerializer.Serialize(new List<GroupSearchResult>(results), JsonContext.Default.ListGroupSearchResult));
-
     public void WriteMessage(Message message) =>
         Console.WriteLine(JsonSerializer.Serialize(message, JsonContext.Default.Message));
 
     public void WriteInbox(IReadOnlyList<InboxEntry> entries) =>
         Console.WriteLine(JsonSerializer.Serialize(new List<InboxEntry>(entries), JsonContext.Default.ListInboxEntry));
+
+    public void WriteGroupInboxSearchResults(IReadOnlyList<GroupInboxSearchResult> results) =>
+        Console.WriteLine(JsonSerializer.Serialize(new List<GroupInboxSearchResult>(results), JsonContext.Default.ListGroupInboxSearchResult));
 
     public void WriteRegistration(RegistrationResult result) =>
         Console.WriteLine(JsonSerializer.Serialize(result, JsonContext.Default.RegistrationResult));

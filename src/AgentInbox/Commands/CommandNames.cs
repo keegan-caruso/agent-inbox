@@ -12,7 +12,7 @@ internal static class CommandNames
     public const string GroupAddMember = "group-add-member";
     public const string GroupRemoveMember = "group-remove-member";
     public const string GroupMembers = "group-members";
-    public const string GroupSearch = "group-search";
+    public const string GroupInboxSearch = "group-inbox-search";
     public const string Send = "send";
     public const string Reply = "reply";
     public const string Inbox = "inbox";
@@ -102,7 +102,7 @@ internal static class CommandNames
         public const string GroupAddMember = "Add an agent to a group";
         public const string GroupRemoveMember = "Remove an agent from a group";
         public const string GroupMembers = "List members of a group";
-        public const string GroupSearch = "Search for groups using semantic similarity";
+        public const string GroupInboxSearch = "Search messages sent to a group using semantic similarity";
         public const string Send = "Send a message using a capability token";
         public const string Reply = "Reply to a message using a capability token";
         public const string Inbox = "List messages for the inbox authorized by a capability token";

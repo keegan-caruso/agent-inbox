@@ -1,7 +1,7 @@
 namespace AgentInbox.Database;
 
 /// <summary>
-/// Simple keyword-based embedding generator for group IDs.
+/// Simple keyword-based embedding generator for message content.
 /// This uses a basic character n-gram approach to create 32-dimensional embeddings
 /// that can be used for semantic similarity search.
 /// </summary>
@@ -10,7 +10,7 @@ public static class EmbeddingGenerator
     private const int EmbeddingDimensions = 32;
 
     /// <summary>
-    /// Generate a 32-dimensional embedding for a group ID.
+    /// Generate a 32-dimensional embedding for message content (subject + body).
     /// Uses character n-grams and simple hashing to create a fixed-size vector.
     /// </summary>
     public static float[] GenerateEmbedding(string text)

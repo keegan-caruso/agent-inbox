@@ -47,23 +47,6 @@ public sealed class PlainTextFormatter : IOutputFormatter
             Console.WriteLine($"{member.AgentId,-30} {member.DisplayName ?? "",-30}");
     }
 
-    public void WriteGroupSearchResults(IReadOnlyList<GroupSearchResult> results)
-    {
-        if (results.Count == 0)
-        {
-            Console.WriteLine("No matching groups found.");
-            return;
-        }
-
-        Console.WriteLine($"{"ID",-30} {"Created At",-20} {"Similarity",-12}");
-        Console.WriteLine(new string('-', 63));
-        foreach (var result in results)
-        {
-            var similarity = (1.0 - result.Distance).ToString("F4");
-            Console.WriteLine($"{result.Id,-30} {result.CreatedAt,-20} {similarity,-12}");
-        }
-    }
-
     public void WriteMessage(Message message)
     {
         Console.WriteLine($"ID:         {message.Id}");
@@ -91,6 +74,22 @@ public sealed class PlainTextFormatter : IOutputFormatter
             string read = entry.IsRead ? "Y" : "N";
             string subject = entry.Subject ?? "(no subject)";
             Console.WriteLine($"{entry.MessageId,-6} {read,-5} {entry.SenderId,-20} {subject,-30} {entry.CreatedAt,-20}");
+        }
+    }
+
+    public void WriteGroupInboxSearchResults(IReadOnlyList<GroupInboxSearchResult> results)
+    {
+        if (results.Count == 0)
+        {
+            Console.WriteLine("No matching messages found.");
+            return;
+        }
+        Console.WriteLine($"{"ID",-6} {"Distance",-10} {"From",-20} {"Subject",-30} {"Date",-20}");
+        Console.WriteLine(new string('-', 88));
+        foreach (var result in results)
+        {
+            string subject = result.Subject ?? "(no subject)";
+            Console.WriteLine($"{result.MessageId,-6} {result.Distance,-10:F4} {result.SenderId,-20} {subject,-30} {result.CreatedAt,-20}");
         }
     }
 

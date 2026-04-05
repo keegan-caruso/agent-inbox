@@ -1,6 +1,7 @@
 using System.CommandLine;
 using AgentInbox.Database;
 using AgentInbox.Formatters;
+using Microsoft.Data.Sqlite;
 
 namespace AgentInbox.Commands;
 
@@ -41,6 +42,18 @@ public static class SendCommand
                 if (!CommandExecution.TryResolveActiveAgentId(conn, parseResult, tokenOpt, formatter, out var senderId))
                     return 1;
 
+                // Extract group IDs before resolving
+                var groupIds = new List<string>();
+                foreach (var recipient in recipientIds)
+                {
+                    if (recipient.StartsWith("group:", StringComparison.Ordinal))
+                    {
+                        var groupId = recipient["group:".Length..];
+                        if (!groupIds.Contains(groupId))
+                            groupIds.Add(groupId);
+                    }
+                }
+
                 if (!CommandExecution.TryResolveSendRecipients(conn, recipientIds, formatter, out var resolvedRecipientIds))
                     return 1;
 
@@ -68,6 +81,27 @@ public static class SendCommand
                     insertRecCmd.ExecuteNonQuery();
                 }
 
+                // Store which groups this message was sent to
+                if (groupIds.Count > 0)
+                {
+                    using var insertGroupCmd = conn.CreateCommand();
+                    insertGroupCmd.Transaction = tx;
+                    insertGroupCmd.CommandText = "INSERT INTO message_groups (message_id, group_id) VALUES (@messageId, @groupId)";
+                    insertGroupCmd.Parameters.AddWithValue("@messageId", messageId);
+                    var groupIdParam = insertGroupCmd.CreateParameter();
+                    groupIdParam.ParameterName = "@groupId";
+                    insertGroupCmd.Parameters.Add(groupIdParam);
+
+                    foreach (var groupId in groupIds)
+                    {
+                        groupIdParam.Value = groupId;
+                        insertGroupCmd.ExecuteNonQuery();
+                    }
+                }
+
+                // Generate and store embedding for the message
+                StoreMessageEmbedding(conn, tx, messageId, subject, body);
+
                 tx.Commit();
                 formatter.WriteSuccess(CommandNames.Messages.MessageSent(messageId));
                 return 0;
@@ -79,5 +113,36 @@ public static class SendCommand
         });
 
         return cmd;
+    }
+
+    private static void StoreMessageEmbedding(SqliteConnection conn, SqliteTransaction tx, long messageId, string? subject, string body)
+    {
+        try
+        {
+            // Combine subject and body for embedding
+            var text = subject != null ? $"{subject} {body}" : body;
+            var embedding = EmbeddingGenerator.GenerateEmbedding(text);
+            var embeddingStr = EmbeddingGenerator.FormatEmbedding(embedding);
+
+            // Delete existing embedding if any
+            using var delCmd = conn.CreateCommand();
+            delCmd.Transaction = tx;
+            delCmd.CommandText = "DELETE FROM message_embeddings WHERE message_id = @id";
+            delCmd.Parameters.AddWithValue("@id", messageId);
+            delCmd.ExecuteNonQuery();
+
+            // Insert new embedding
+            using var insCmd = conn.CreateCommand();
+            insCmd.Transaction = tx;
+            insCmd.CommandText = "INSERT INTO message_embeddings (message_id, embedding) VALUES (@id, @embedding)";
+            insCmd.Parameters.AddWithValue("@id", messageId);
+            insCmd.Parameters.AddWithValue("@embedding", embeddingStr);
+            insCmd.ExecuteNonQuery();
+        }
+        catch (SqliteException)
+        {
+            // If vec extension is not available, skip embedding storage
+            // This is not a critical error
+        }
     }
 }

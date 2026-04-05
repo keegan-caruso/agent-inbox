@@ -50,6 +50,12 @@ public static class DbBootstrap
                 agent_id TEXT NOT NULL REFERENCES agents(id),
                 PRIMARY KEY (group_id, agent_id)
             );
+
+            CREATE TABLE IF NOT EXISTS message_groups (
+                message_id INTEGER NOT NULL REFERENCES messages(id),
+                group_id TEXT NOT NULL REFERENCES groups(id),
+                PRIMARY KEY (message_id, group_id)
+            );
             """;
         cmd.ExecuteNonQuery();
 
@@ -61,6 +67,8 @@ public static class DbBootstrap
                 ON agents (capability_token_hash);
             CREATE INDEX IF NOT EXISTS idx_group_members_agent_id
                 ON group_members (agent_id);
+            CREATE INDEX IF NOT EXISTS idx_message_groups_group_id
+                ON message_groups (group_id);
             """;
         indexCmd.ExecuteNonQuery();
 
@@ -73,12 +81,12 @@ public static class DbBootstrap
     {
         try
         {
-            // Create vector table for group embeddings
-            // Using 32-dimensional embeddings for simplicity (keyword-based)
+            // Create vector table for message embeddings
+            // Using 32-dimensional embeddings for message content
             using var vecCmd = connection.CreateCommand();
             vecCmd.CommandText = """
-                CREATE VIRTUAL TABLE IF NOT EXISTS group_embeddings USING vec0(
-                    group_id TEXT PRIMARY KEY,
+                CREATE VIRTUAL TABLE IF NOT EXISTS message_embeddings USING vec0(
+                    message_id INTEGER PRIMARY KEY,
                     embedding FLOAT[32]
                 );
                 """;
