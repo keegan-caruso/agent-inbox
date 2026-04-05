@@ -4,15 +4,25 @@ namespace AgentInbox.Database;
 
 public static class DbBootstrap
 {
+    /// <summary>
+    /// Current schema version for migration tracking.
+    /// </summary>
+    public const int CurrentSchemaVersion = 1;
+
     private const string FreshDatabaseRequiredMessage =
         "This version requires a fresh database. Migration/backward compatibility is not handled yet.";
 
-    public static void EnsureSchema(SqliteConnection connection, bool vecLoaded = false)
+    public static int EnsureSchema(SqliteConnection connection, bool vecLoaded = false)
     {
         using var cmd = connection.CreateCommand();
         cmd.CommandText = """
             PRAGMA journal_mode=WAL;
             PRAGMA foreign_keys=ON;
+
+            CREATE TABLE IF NOT EXISTS schema_version (
+                version INTEGER PRIMARY KEY,
+                applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
 
             CREATE TABLE IF NOT EXISTS agents (
                 id              TEXT PRIMARY KEY,
@@ -101,6 +111,22 @@ public static class DbBootstrap
                 """;
             vecCmd.ExecuteNonQuery();
         }
+
+        // Track schema version
+        using var versionCmd = connection.CreateCommand();
+        versionCmd.CommandText = "INSERT OR IGNORE INTO schema_version (version) VALUES (@version)";
+        versionCmd.Parameters.AddWithValue("@version", CurrentSchemaVersion);
+        versionCmd.ExecuteNonQuery();
+
+        return CurrentSchemaVersion;
+    }
+
+    public static int GetSchemaVersion(SqliteConnection connection)
+    {
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT version FROM schema_version ORDER BY version DESC LIMIT 1";
+        var result = cmd.ExecuteScalar();
+        return result is long version ? (int)version : 0;
     }
 
     private static void ValidateAgentSchema(SqliteConnection connection)

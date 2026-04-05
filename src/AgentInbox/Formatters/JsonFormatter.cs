@@ -33,4 +33,7 @@ public sealed class JsonFormatter : IOutputFormatter
 
     public void WriteError(string message) =>
         Console.Error.WriteLine(JsonSerializer.Serialize(new ErrorResult { Error = message }, JsonContext.Default.ErrorResult));
+
+    public void WriteError(string message, string errorCode) =>
+        Console.Error.WriteLine(JsonSerializer.Serialize(new ErrorResultWithCode { Error = message, ErrorCode = errorCode }, JsonContext.Default.ErrorResultWithCode));
 }

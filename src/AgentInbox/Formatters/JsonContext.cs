@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using AgentInbox.Diagnostics;
 using AgentInbox.Models;
 
 namespace AgentInbox.Formatters;
@@ -22,6 +23,8 @@ namespace AgentInbox.Formatters;
 [JsonSerializable(typeof(GroupMembersResult))]
 [JsonSerializable(typeof(SuccessResult))]
 [JsonSerializable(typeof(ErrorResult))]
+[JsonSerializable(typeof(ErrorResultWithCode))]
+[JsonSerializable(typeof(DiagnosticEvent))]
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 public partial class JsonContext : JsonSerializerContext
 {
@@ -35,6 +38,12 @@ public sealed class SuccessResult
 public sealed class ErrorResult
 {
     public string Error { get; init; } = "";
+}
+
+public sealed class ErrorResultWithCode
+{
+    public string Error { get; init; } = "";
+    public string ErrorCode { get; init; } = "";
 }
 
 public sealed record GroupMembersResult(string GroupId, List<GroupMember> Members);
