@@ -9,6 +9,8 @@ namespace AgentInbox.Formatters;
 [JsonSerializable(typeof(List<GroupMember>))]
 [JsonSerializable(typeof(Group))]
 [JsonSerializable(typeof(List<Group>))]
+[JsonSerializable(typeof(GroupSearchResult))]
+[JsonSerializable(typeof(List<GroupSearchResult>))]
 [JsonSerializable(typeof(Message))]
 [JsonSerializable(typeof(List<Message>))]
 [JsonSerializable(typeof(MessageRecipient))]

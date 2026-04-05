@@ -5,6 +5,7 @@ public interface IOutputFormatter
     void WriteAgents(IReadOnlyList<Models.Agent> agents);
     void WriteGroups(IReadOnlyList<Models.Group> groups);
     void WriteGroupMembers(string groupId, IReadOnlyList<Models.GroupMember> members);
+    void WriteGroupSearchResults(IReadOnlyList<Models.GroupSearchResult> results);
     void WriteMessage(Models.Message message);
     void WriteInbox(IReadOnlyList<Models.InboxEntry> entries);
     void WriteRegistration(RegistrationResult result);

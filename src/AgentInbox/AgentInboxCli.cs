@@ -41,6 +41,7 @@ public static class AgentInboxCli
         rootCommand.Add(GroupAddMemberCommand.Build(dbPathOption, formatOption));
         rootCommand.Add(GroupRemoveMemberCommand.Build(dbPathOption, formatOption));
         rootCommand.Add(GroupMembersCommand.Build(dbPathOption, formatOption));
+        rootCommand.Add(GroupSearchCommand.Build(dbPathOption, formatOption));
         rootCommand.Add(SendCommand.Build(dbPathOption, formatOption));
         rootCommand.Add(ReplyCommand.Build(dbPathOption, formatOption));
         rootCommand.Add(InboxCommand.Build(dbPathOption, formatOption));

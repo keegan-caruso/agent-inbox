@@ -137,6 +137,18 @@ agent-inbox group-members engineering
 agent-inbox group-members engineering --format json
 ```
 
+#### `group-search <query> [--limit <number>]`
+
+Search for groups using semantic similarity. Groups are indexed with automatically generated embeddings based on their IDs.
+
+```bash
+agent-inbox group-search engineer
+agent-inbox group-search engineer --limit 5
+agent-inbox group-search product --format json
+```
+
+The search returns groups ranked by similarity to the query, with a similarity score (higher is better).
+
 #### `send --token <capability-token> --to <recipient[,recipient,...]> --body <text> [--subject <text>]`
 
 Send a message from the agent authorized by the capability token to one or more recipients. A recipient can be either:

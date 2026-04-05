@@ -1,11 +1,39 @@
 using System.CommandLine;
 using AgentInbox.Database;
 using AgentInbox.Formatters;
+using Microsoft.Data.Sqlite;
 
 namespace AgentInbox.Commands;
 
 public static class GroupCreateCommand
 {
+    private static void StoreGroupEmbedding(SqliteConnection conn, string groupId)
+    {
+        try
+        {
+            var embedding = EmbeddingGenerator.GenerateEmbedding(groupId);
+            var embeddingStr = EmbeddingGenerator.FormatEmbedding(embedding);
+
+            // Delete existing embedding if any
+            using var delCmd = conn.CreateCommand();
+            delCmd.CommandText = "DELETE FROM group_embeddings WHERE group_id = @id";
+            delCmd.Parameters.AddWithValue("@id", groupId);
+            delCmd.ExecuteNonQuery();
+
+            // Insert new embedding
+            using var insCmd = conn.CreateCommand();
+            insCmd.CommandText = "INSERT INTO group_embeddings (group_id, embedding) VALUES (@id, @embedding)";
+            insCmd.Parameters.AddWithValue("@id", groupId);
+            insCmd.Parameters.AddWithValue("@embedding", embeddingStr);
+            insCmd.ExecuteNonQuery();
+        }
+        catch (SqliteException)
+        {
+            // If vec extension is not available, skip embedding storage
+            // This is not a critical error
+        }
+    }
+
     public static Command Build(Option<string> dbPathOption, Option<OutputFormat> formatOption)
     {
         var groupIdArg = new Argument<string>(CommandNames.GroupIdArg) { Description = CommandNames.Descriptions.GroupIdArg };
@@ -36,6 +64,9 @@ public static class GroupCreateCommand
                     insertCmd.Parameters.AddWithValue("@id", groupId);
                     insertCmd.ExecuteNonQuery();
 
+                    // Generate and store embedding
+                    StoreGroupEmbedding(conn, groupId);
+
                     formatter.WriteSuccess(CommandNames.Messages.GroupCreated(groupId));
                     return 0;
                 }
@@ -51,6 +82,9 @@ public static class GroupCreateCommand
                 reactivateCmd.CommandText = "UPDATE groups SET deleted_at = NULL, created_at = datetime('now') WHERE id = @id";
                 reactivateCmd.Parameters.AddWithValue("@id", groupId);
                 reactivateCmd.ExecuteNonQuery();
+
+                // Regenerate embedding (in case it was deleted)
+                StoreGroupEmbedding(conn, groupId);
 
                 formatter.WriteSuccess(CommandNames.Messages.GroupCreated(groupId));
                 return 0;

@@ -12,5 +12,14 @@
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
+    <PackageReference Include="sqlite-vec" />
+  </ItemGroup>
+
+  <!-- Include native sqlite-vec libraries in output -->
+  <ItemGroup>
+    <ContentWithTargetPath Include="$(NuGetPackageRoot)sqlite-vec/0.1.7-alpha.2.1/runtimes/**/*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </ContentWithTargetPath>
   </ItemGroup>
 </Project>

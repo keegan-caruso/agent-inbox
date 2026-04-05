@@ -8,6 +8,7 @@
     <PackageVersion Include="System.CommandLine" Version="2.0.5" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.5" />
     <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.2" />
+    <PackageVersion Include="sqlite-vec" Version="0.1.7-alpha.2.1" />
 
     <!-- Test project -->
     <PackageVersion Include="TUnit" Version="1.22.3" />

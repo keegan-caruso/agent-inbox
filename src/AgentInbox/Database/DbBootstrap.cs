@@ -63,6 +63,32 @@ public static class DbBootstrap
                 ON group_members (agent_id);
             """;
         indexCmd.ExecuteNonQuery();
+
+        // Load vec extension and create vector tables
+        VecExtension.Load(connection);
+        EnsureVectorSchema(connection);
+    }
+
+    private static void EnsureVectorSchema(SqliteConnection connection)
+    {
+        try
+        {
+            // Create vector table for group embeddings
+            // Using 32-dimensional embeddings for simplicity (keyword-based)
+            using var vecCmd = connection.CreateCommand();
+            vecCmd.CommandText = """
+                CREATE VIRTUAL TABLE IF NOT EXISTS group_embeddings USING vec0(
+                    group_id TEXT PRIMARY KEY,
+                    embedding FLOAT[32]
+                );
+                """;
+            vecCmd.ExecuteNonQuery();
+        }
+        catch (SqliteException)
+        {
+            // If vec extension is not available, skip vector schema creation
+            // This allows the app to work without semantic search
+        }
     }
 
     private static void ValidateAgentSchema(SqliteConnection connection)

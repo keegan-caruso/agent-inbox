@@ -47,6 +47,23 @@ public sealed class PlainTextFormatter : IOutputFormatter
             Console.WriteLine($"{member.AgentId,-30} {member.DisplayName ?? "",-30}");
     }
 
+    public void WriteGroupSearchResults(IReadOnlyList<GroupSearchResult> results)
+    {
+        if (results.Count == 0)
+        {
+            Console.WriteLine("No matching groups found.");
+            return;
+        }
+
+        Console.WriteLine($"{"ID",-30} {"Created At",-20} {"Similarity",-12}");
+        Console.WriteLine(new string('-', 63));
+        foreach (var result in results)
+        {
+            var similarity = (1.0 - result.Distance).ToString("F4");
+            Console.WriteLine($"{result.Id,-30} {result.CreatedAt,-20} {similarity,-12}");
+        }
+    }
+
     public void WriteMessage(Message message)
     {
         Console.WriteLine($"ID:         {message.Id}");

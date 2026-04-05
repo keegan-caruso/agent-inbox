@@ -16,6 +16,9 @@ public sealed class JsonFormatter : IOutputFormatter
             new GroupMembersResult(groupId, [.. members]),
             JsonContext.Default.GroupMembersResult));
 
+    public void WriteGroupSearchResults(IReadOnlyList<GroupSearchResult> results) =>
+        Console.WriteLine(JsonSerializer.Serialize(new List<GroupSearchResult>(results), JsonContext.Default.ListGroupSearchResult));
+
     public void WriteMessage(Message message) =>
         Console.WriteLine(JsonSerializer.Serialize(message, JsonContext.Default.Message));
 
