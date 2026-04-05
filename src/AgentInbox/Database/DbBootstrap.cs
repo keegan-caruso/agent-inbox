@@ -7,7 +7,7 @@ public static class DbBootstrap
     private const string FreshDatabaseRequiredMessage =
         "This version requires a fresh database. Migration/backward compatibility is not handled yet.";
 
-    public static void EnsureSchema(SqliteConnection connection)
+    public static void EnsureSchema(SqliteConnection connection, bool vecLoaded = false)
     {
         using var cmd = connection.CreateCommand();
         cmd.CommandText = """
@@ -63,6 +63,44 @@ public static class DbBootstrap
                 ON group_members (agent_id);
             """;
         indexCmd.ExecuteNonQuery();
+
+        // FTS5 full-text search (built into SQLite — always available)
+        using var ftsCmd = connection.CreateCommand();
+        ftsCmd.CommandText = """
+            CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
+                subject,
+                body,
+                content='messages',
+                content_rowid='id'
+            );
+
+            CREATE TRIGGER IF NOT EXISTS messages_fts_insert AFTER INSERT ON messages BEGIN
+                INSERT INTO messages_fts(rowid, subject, body) VALUES (new.id, new.subject, new.body);
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS messages_fts_delete BEFORE DELETE ON messages BEGIN
+                INSERT INTO messages_fts(messages_fts, rowid, subject, body) VALUES ('delete', old.id, old.subject, old.body);
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS messages_fts_update AFTER UPDATE ON messages BEGIN
+                INSERT INTO messages_fts(messages_fts, rowid, subject, body) VALUES ('delete', old.id, old.subject, old.body);
+                INSERT INTO messages_fts(rowid, subject, body) VALUES (new.id, new.subject, new.body);
+            END;
+            """;
+        ftsCmd.ExecuteNonQuery();
+
+        // Vector embeddings table (requires sqlite-vec extension)
+        if (vecLoaded)
+        {
+            using var vecCmd = connection.CreateCommand();
+            vecCmd.CommandText = """
+                CREATE VIRTUAL TABLE IF NOT EXISTS message_embeddings USING vec0(
+                    message_id INTEGER PRIMARY KEY,
+                    embedding FLOAT[384]
+                );
+                """;
+            vecCmd.ExecuteNonQuery();
+        }
     }
 
     private static void ValidateAgentSchema(SqliteConnection connection)

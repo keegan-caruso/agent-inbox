@@ -77,6 +77,22 @@ public sealed class PlainTextFormatter : IOutputFormatter
         }
     }
 
+    public void WriteSearchResults(IReadOnlyList<SearchResult> results)
+    {
+        if (results.Count == 0)
+        {
+            Console.WriteLine("No results.");
+            return;
+        }
+        Console.WriteLine($"{"ID",-6} {"Score",-10} {"From",-20} {"Subject",-30} {"Date",-20}");
+        Console.WriteLine(new string('-', 88));
+        foreach (var result in results)
+        {
+            string subject = result.Subject ?? "(no subject)";
+            Console.WriteLine($"{result.MessageId,-6} {result.Score,-10:F4} {result.SenderId,-20} {subject,-30} {result.CreatedAt,-20}");
+        }
+    }
+
     public void WriteRegistration(RegistrationResult result)
     {
         Console.WriteLine(result.Message);

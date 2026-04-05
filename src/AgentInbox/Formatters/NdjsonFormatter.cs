@@ -33,6 +33,12 @@ public sealed class NdjsonFormatter : IOutputFormatter
             Console.WriteLine(JsonSerializer.Serialize(entry, JsonContext.Default.InboxEntry));
     }
 
+    public void WriteSearchResults(IReadOnlyList<SearchResult> results)
+    {
+        foreach (var result in results)
+            Console.WriteLine(JsonSerializer.Serialize(result, JsonContext.Default.SearchResult));
+    }
+
     public void WriteRegistration(RegistrationResult result) =>
         Console.WriteLine(JsonSerializer.Serialize(result, JsonContext.Default.RegistrationResult));
 

@@ -6,6 +6,8 @@ public sealed class DbContext : IDisposable
 {
     private readonly SqliteConnection _connection;
 
+    public bool VecLoaded { get; }
+
     public DbContext(string dbPath)
     {
         var dir = Path.GetDirectoryName(dbPath);
@@ -19,7 +21,8 @@ public sealed class DbContext : IDisposable
 
         _connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
         _connection.Open();
-        DbBootstrap.EnsureSchema(_connection);
+        VecLoaded = VecExtension.TryLoad(_connection);
+        DbBootstrap.EnsureSchema(_connection, VecLoaded);
     }
 
     public SqliteConnection Connection => _connection;
