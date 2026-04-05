@@ -17,7 +17,7 @@
     <PackageProjectUrl>https://github.com/keegan-caruso/agent-inbox</PackageProjectUrl>
     <RepositoryUrl>https://github.com/keegan-caruso/agent-inbox</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>cli;agent;messaging;sqlite;communication</PackageTags>
   </PropertyGroup>
