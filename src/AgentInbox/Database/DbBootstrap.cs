@@ -4,7 +4,7 @@ namespace AgentInbox.Database;
 
 public static class DbBootstrap
 {
-    public const int CurrentSchemaVersion = 2;
+    public const int CurrentSchemaVersion = 1;
 
     public static void EnsureSchema(SqliteConnection connection)
     {

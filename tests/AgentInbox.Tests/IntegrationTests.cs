@@ -149,18 +149,6 @@ public sealed partial class IntegrationTests : IDisposable
     }
 
     [Test]
-    public async Task OlderVersionedDb_FailsWithMigrationMessage()
-    {
-        await CreateDbWithVersionAsync(1);
-
-        var result = await InvokeAsync("register", "alice", "--format", "json");
-
-        await Assert.That(result.ExitCode).IsEqualTo(1);
-        await Assert.That(ParseError(result.StdErr)).IsEqualTo(
-            $"Database schema version 1 is older than supported version {DbBootstrap.CurrentSchemaVersion}. Migration is not implemented yet.");
-    }
-
-    [Test]
     public async Task NewerVersionedDb_FailsWithNewerSchemaMessage()
     {
         var newerVersion = DbBootstrap.CurrentSchemaVersion + 1;

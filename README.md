@@ -129,11 +129,10 @@ agent-inbox read 1 --token "$ALICE_TOKEN"
 
 The SQLite database is created automatically on first use. Schema versioning uses SQLite `PRAGMA user_version`.
 
-- **Fresh database**: initialized to the latest schema and assigned `user_version = 2`.
-- **Current-version database** (`user_version = 2`): opened normally.
+- **Fresh database**: initialized to the latest schema and assigned `user_version = 1`.
+- **Current-version database** (`user_version = 1`): opened normally.
 - **Unversioned legacy database** (tables present, `user_version = 0`): rejected; migration is not implemented yet.
-- **Older versioned database** (`user_version < 2`): rejected; migration is not implemented yet.
-- **Newer database** (`user_version > 2`): rejected; created by a future binary this version does not support.
+- **Newer database** (`user_version > 1`): rejected; created by a future binary this version does not support.
 
 Future schema changes will increment `user_version` and be handled version-to-version. Backward compatibility for older databases is not implemented yet.
 
