@@ -17,8 +17,10 @@ public static class DbBootstrap
 
         if (!hasUserTables && userVersion == 0)
         {
+            using var tx = connection.BeginTransaction();
             CreateCurrentSchema(connection);
             SetUserVersion(connection, CurrentSchemaVersion);
+            tx.Commit();
         }
         else if (userVersion == CurrentSchemaVersion)
         {
@@ -28,11 +30,6 @@ public static class DbBootstrap
         {
             throw new InvalidOperationException(
                 "This database uses an unversioned legacy schema. Migration is not implemented yet.");
-        }
-        else if (userVersion < CurrentSchemaVersion)
-        {
-            throw new InvalidOperationException(
-                $"Database schema version {userVersion} is older than supported version {CurrentSchemaVersion}. Migration is not implemented yet.");
         }
         else
         {
