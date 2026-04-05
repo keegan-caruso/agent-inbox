@@ -38,6 +38,18 @@ public static class DbBootstrap
                 is_read      INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (message_id, recipient_id)
             );
+
+            CREATE TABLE IF NOT EXISTS groups (
+                id          TEXT PRIMARY KEY,
+                created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+                deleted_at  TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS group_members (
+                group_id TEXT NOT NULL REFERENCES groups(id),
+                agent_id TEXT NOT NULL REFERENCES agents(id),
+                PRIMARY KEY (group_id, agent_id)
+            );
             """;
         cmd.ExecuteNonQuery();
 
@@ -47,6 +59,8 @@ public static class DbBootstrap
         indexCmd.CommandText = """
             CREATE UNIQUE INDEX IF NOT EXISTS idx_agents_capability_token_hash
                 ON agents (capability_token_hash);
+            CREATE INDEX IF NOT EXISTS idx_group_members_agent_id
+                ON group_members (agent_id);
             """;
         indexCmd.ExecuteNonQuery();
     }

@@ -193,4 +193,63 @@ public sealed partial class IntegrationTests : IDisposable
         await Assert.That(selfRecipients).IsEqualTo(1L);
     }
 
+    [Test]
+    public async Task Register_RejectsAgentIdWithGroupPrefix()
+    {
+        var result = await InvokeAsync("register", "group:engineering", "--format", "json");
+
+        await Assert.That(result.ExitCode).IsEqualTo(1);
+        await Assert.That(ParseError(result.StdErr)).IsEqualTo("Agent ID 'group:engineering' cannot start with 'group:' (reserved prefix).");
+    }
+
+    [Test]
+    public async Task GroupCreate_ReactivatesSoftDeletedGroup()
+    {
+        var firstCreate = await InvokeAsync("group-create", "engineering", "--format", "json");
+        var delete = await InvokeAsync("group-delete", "engineering", "--format", "json");
+        var secondCreate = await InvokeAsync("group-create", "engineering", "--format", "json");
+        var groups = await InvokeAsync("groups", "--format", "json");
+
+        await Assert.That(firstCreate.ExitCode).IsEqualTo(0);
+        await Assert.That(delete.ExitCode).IsEqualTo(0);
+        await Assert.That(secondCreate.ExitCode).IsEqualTo(0);
+        await Assert.That(ParseJsonArray(groups.StdOut).Length).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Groups_CanBeManaged_AndListed()
+    {
+        await RegisterAgentAsync("alice", "Alice");
+        await RegisterAgentAsync("bob", "Bob");
+
+        var create = await InvokeAsync("group-create", "engineering", "--format", "json");
+        var duplicateCreate = await InvokeAsync("group-create", "engineering", "--format", "json");
+        var groups = await InvokeAsync("groups", "--format", "json");
+        var addAlice = await InvokeAsync("group-add-member", "engineering", "alice", "--format", "json");
+        var addBob = await InvokeAsync("group-add-member", "engineering", "bob", "--format", "json");
+        var duplicateMember = await InvokeAsync("group-add-member", "engineering", "alice", "--format", "json");
+        var members = await InvokeAsync("group-members", "engineering", "--format", "json");
+        var removeAlice = await InvokeAsync("group-remove-member", "engineering", "alice", "--format", "json");
+        var removeAliceAgain = await InvokeAsync("group-remove-member", "engineering", "alice", "--format", "json");
+        var delete = await InvokeAsync("group-delete", "engineering", "--format", "json");
+        var deleteMissing = await InvokeAsync("group-delete", "engineering", "--format", "json");
+
+        await Assert.That(create.ExitCode).IsEqualTo(0);
+        await Assert.That(ParseJsonArray(groups.StdOut).Length).IsEqualTo(1);
+        await Assert.That(addAlice.ExitCode).IsEqualTo(0);
+        await Assert.That(addBob.ExitCode).IsEqualTo(0);
+        await Assert.That(ParseJson(members.StdOut).GetProperty("members").GetArrayLength()).IsEqualTo(2);
+        await Assert.That(removeAlice.ExitCode).IsEqualTo(0);
+        await Assert.That(delete.ExitCode).IsEqualTo(0);
+
+        await Assert.That(duplicateCreate.ExitCode).IsEqualTo(1);
+        await Assert.That(ParseError(duplicateCreate.StdErr)).IsEqualTo("Group 'engineering' already exists.");
+        await Assert.That(duplicateMember.ExitCode).IsEqualTo(1);
+        await Assert.That(ParseError(duplicateMember.StdErr)).IsEqualTo("Agent 'alice' is already a member of group 'engineering'.");
+        await Assert.That(removeAliceAgain.ExitCode).IsEqualTo(1);
+        await Assert.That(ParseError(removeAliceAgain.StdErr)).IsEqualTo("Agent 'alice' is not a member of group 'engineering'.");
+        await Assert.That(deleteMissing.ExitCode).IsEqualTo(1);
+        await Assert.That(ParseError(deleteMissing.StdErr)).IsEqualTo("Group 'engineering' not found.");
+    }
+
 }
