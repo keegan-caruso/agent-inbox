@@ -17,11 +17,36 @@ Groups are named recipient sets with persistent membership. Groups are reusable 
 
 ## Requirements
 
-- .NET 10 SDK
+- .NET 10 SDK (for building from source)
+- .NET 10 Runtime (for running as a .NET tool)
 
 > `agent-inbox` must remain publishable and functional under Native AOT-compatible coding patterns; tests must avoid introducing non-AOT-safe implementation dependencies.
 
-## Build
+## Installation
+
+### Install as a .NET Tool
+
+The easiest way to install `agent-inbox` is as a .NET global tool:
+
+```bash
+dotnet tool install --global AgentInbox
+```
+
+Once installed, the `agent-inbox` command will be available globally.
+
+To update to the latest version:
+
+```bash
+dotnet tool update --global AgentInbox
+```
+
+To uninstall:
+
+```bash
+dotnet tool uninstall --global AgentInbox
+```
+
+### Build from Source
 
 ```bash
 dotnet build src/AgentInbox/AgentInbox.csproj -c Release
