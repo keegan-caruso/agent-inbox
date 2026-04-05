@@ -11,4 +11,5 @@ public interface IOutputFormatter
     void WriteRegistration(RegistrationResult result);
     void WriteSuccess(string message);
     void WriteError(string message);
+    void WriteError(string message, string errorCode);
 }

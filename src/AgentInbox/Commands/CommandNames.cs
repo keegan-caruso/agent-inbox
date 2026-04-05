@@ -23,6 +23,8 @@ internal static class CommandNames
     public const string DbPath = "--db-path";
     public const string Format = "--format";
     public const string FormatAlias = "-f";
+    public const string Verbose = "--verbose";
+    public const string VerboseAlias = "-v";
     public const string Token = "--token";
     public const string CapabilityTokenEnvVar = "AGENT_INBOX_CAPABILITY_TOKEN";
 
@@ -129,6 +131,7 @@ internal static class CommandNames
         // Global option descriptions
         public const string DbPath = "Path to the SQLite database file";
         public const string Format = "Output format: plain, json, or ndjson";
+        public const string Verbose = "Enable verbose/debug mode with diagnostic event logging";
         public const string CapabilityToken = $"Capability token (or {CapabilityTokenEnvVar})";
 
         // Argument descriptions
