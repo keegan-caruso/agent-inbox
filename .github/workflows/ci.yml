@@ -9,7 +9,17 @@ on:
 jobs:
   build-and-test:
     name: Build & Test
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+            test-path: ./tests/AgentInbox.Tests/bin/Release/net10.0/linux-x64/publish/AgentInbox.Tests
+          - os: windows-latest
+            rid: win-x64
+            test-path: .\tests\AgentInbox.Tests\bin\Release\net10.0\win-x64\publish\AgentInbox.Tests.exe
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: read
 
@@ -23,9 +33,11 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Update apt cache
+        if: runner.os == 'Linux'
         run: sudo apt-get update
 
       - name: Install native AOT prerequisites
+        if: runner.os == 'Linux'
         run: sudo apt-get install -y --no-install-recommends clang zlib1g-dev
 
       - name: Restore
@@ -35,7 +47,7 @@ jobs:
         run: dotnet build --no-restore -c Release
 
       - name: Publish Tests (AOT)
-        run: dotnet publish tests/AgentInbox.Tests/AgentInbox.Tests.csproj --no-restore -c Release -r linux-x64
+        run: dotnet publish tests/AgentInbox.Tests/AgentInbox.Tests.csproj --no-restore -c Release -r ${{ matrix.rid }}
 
       - name: Test
-        run: ./tests/AgentInbox.Tests/bin/Release/net10.0/linux-x64/publish/AgentInbox.Tests
+        run: ${{ matrix.test-path }}
