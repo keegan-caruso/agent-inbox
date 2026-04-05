@@ -6,7 +6,7 @@ public static class DbBootstrap
 {
     public const int CurrentSchemaVersion = 1;
 
-    public static void EnsureSchema(SqliteConnection connection)
+    public static void EnsureSchema(SqliteConnection connection, bool vecLoaded = false)
     {
         using var pragmaCmd = connection.CreateCommand();
         pragmaCmd.CommandText = "PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;";
@@ -18,7 +18,7 @@ public static class DbBootstrap
         if (!hasUserTables && userVersion == 0)
         {
             using var tx = connection.BeginTransaction();
-            CreateCurrentSchema(connection);
+            CreateCurrentSchema(connection, vecLoaded);
             SetUserVersion(connection, CurrentSchemaVersion);
             tx.Commit();
         }
@@ -38,7 +38,7 @@ public static class DbBootstrap
         }
     }
 
-    private static void CreateCurrentSchema(SqliteConnection connection)
+    private static void CreateCurrentSchema(SqliteConnection connection, bool vecLoaded = false)
     {
         using var cmd = connection.CreateCommand();
         cmd.CommandText = """
@@ -66,6 +66,18 @@ public static class DbBootstrap
                 is_read      INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (message_id, recipient_id)
             );
+
+            CREATE TABLE IF NOT EXISTS groups (
+                id          TEXT PRIMARY KEY,
+                created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+                deleted_at  TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS group_members (
+                group_id TEXT NOT NULL REFERENCES groups(id),
+                agent_id TEXT NOT NULL REFERENCES agents(id),
+                PRIMARY KEY (group_id, agent_id)
+            );
             """;
         cmd.ExecuteNonQuery();
 
@@ -73,8 +85,48 @@ public static class DbBootstrap
         indexCmd.CommandText = """
             CREATE UNIQUE INDEX IF NOT EXISTS idx_agents_capability_token_hash
                 ON agents (capability_token_hash);
+            CREATE INDEX IF NOT EXISTS idx_group_members_agent_id
+                ON group_members (agent_id);
             """;
         indexCmd.ExecuteNonQuery();
+
+        // FTS5 full-text search (built into SQLite — always available)
+        using var ftsCmd = connection.CreateCommand();
+        ftsCmd.CommandText = """
+            CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
+                subject,
+                body,
+                content='messages',
+                content_rowid='id'
+            );
+
+            CREATE TRIGGER IF NOT EXISTS messages_fts_insert AFTER INSERT ON messages BEGIN
+                INSERT INTO messages_fts(rowid, subject, body) VALUES (new.id, new.subject, new.body);
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS messages_fts_delete BEFORE DELETE ON messages BEGIN
+                INSERT INTO messages_fts(messages_fts, rowid, subject, body) VALUES ('delete', old.id, old.subject, old.body);
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS messages_fts_update AFTER UPDATE ON messages BEGIN
+                INSERT INTO messages_fts(messages_fts, rowid, subject, body) VALUES ('delete', old.id, old.subject, old.body);
+                INSERT INTO messages_fts(rowid, subject, body) VALUES (new.id, new.subject, new.body);
+            END;
+            """;
+        ftsCmd.ExecuteNonQuery();
+
+        // Vector embeddings table (requires sqlite-vec extension)
+        if (vecLoaded)
+        {
+            using var vecCmd = connection.CreateCommand();
+            vecCmd.CommandText = """
+                CREATE VIRTUAL TABLE IF NOT EXISTS message_embeddings USING vec0(
+                    message_id INTEGER PRIMARY KEY,
+                    embedding FLOAT[384]
+                );
+                """;
+            vecCmd.ExecuteNonQuery();
+        }
     }
 
     private static void ValidateCurrentSchema(SqliteConnection connection)

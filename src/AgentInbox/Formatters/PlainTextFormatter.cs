@@ -19,6 +19,34 @@ public sealed class PlainTextFormatter : IOutputFormatter
         }
     }
 
+    public void WriteGroups(IReadOnlyList<Group> groups)
+    {
+        if (groups.Count == 0)
+        {
+            Console.WriteLine("No groups.");
+            return;
+        }
+        Console.WriteLine($"{"ID",-30} {"Created At",-20}");
+        Console.WriteLine(new string('-', 51));
+        foreach (var group in groups)
+            Console.WriteLine($"{group.Id,-30} {group.CreatedAt,-20}");
+    }
+
+    public void WriteGroupMembers(string groupId, IReadOnlyList<GroupMember> members)
+    {
+        Console.WriteLine($"Group: {groupId}");
+        if (members.Count == 0)
+        {
+            Console.WriteLine("No members.");
+            return;
+        }
+
+        Console.WriteLine($"{"ID",-30} {"Display Name",-30}");
+        Console.WriteLine(new string('-', 61));
+        foreach (var member in members)
+            Console.WriteLine($"{member.AgentId,-30} {member.DisplayName ?? "",-30}");
+    }
+
     public void WriteMessage(Message message)
     {
         Console.WriteLine($"ID:         {message.Id}");
@@ -46,6 +74,22 @@ public sealed class PlainTextFormatter : IOutputFormatter
             string read = entry.IsRead ? "Y" : "N";
             string subject = entry.Subject ?? "(no subject)";
             Console.WriteLine($"{entry.MessageId,-6} {read,-5} {entry.SenderId,-20} {subject,-30} {entry.CreatedAt,-20}");
+        }
+    }
+
+    public void WriteSearchResults(IReadOnlyList<SearchResult> results)
+    {
+        if (results.Count == 0)
+        {
+            Console.WriteLine("No results.");
+            return;
+        }
+        Console.WriteLine($"{"ID",-6} {"Score",-10} {"From",-20} {"Subject",-30} {"Date",-20}");
+        Console.WriteLine(new string('-', 88));
+        foreach (var result in results)
+        {
+            string subject = result.Subject ?? "(no subject)";
+            Console.WriteLine($"{result.MessageId,-6} {result.Score,-10:F4} {result.SenderId,-20} {subject,-30} {result.CreatedAt,-20}");
         }
     }
 

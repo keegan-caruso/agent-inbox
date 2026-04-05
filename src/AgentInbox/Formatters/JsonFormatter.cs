@@ -8,11 +8,22 @@ public sealed class JsonFormatter : IOutputFormatter
     public void WriteAgents(IReadOnlyList<Agent> agents) =>
         Console.WriteLine(JsonSerializer.Serialize(new List<Agent>(agents), JsonContext.Default.ListAgent));
 
+    public void WriteGroups(IReadOnlyList<Group> groups) =>
+        Console.WriteLine(JsonSerializer.Serialize(new List<Group>(groups), JsonContext.Default.ListGroup));
+
+    public void WriteGroupMembers(string groupId, IReadOnlyList<GroupMember> members) =>
+        Console.WriteLine(JsonSerializer.Serialize(
+            new GroupMembersResult(groupId, [.. members]),
+            JsonContext.Default.GroupMembersResult));
+
     public void WriteMessage(Message message) =>
         Console.WriteLine(JsonSerializer.Serialize(message, JsonContext.Default.Message));
 
     public void WriteInbox(IReadOnlyList<InboxEntry> entries) =>
         Console.WriteLine(JsonSerializer.Serialize(new List<InboxEntry>(entries), JsonContext.Default.ListInboxEntry));
+
+    public void WriteSearchResults(IReadOnlyList<SearchResult> results) =>
+        Console.WriteLine(JsonSerializer.Serialize(new List<SearchResult>(results), JsonContext.Default.ListSearchResult));
 
     public void WriteRegistration(RegistrationResult result) =>
         Console.WriteLine(JsonSerializer.Serialize(result, JsonContext.Default.RegistrationResult));

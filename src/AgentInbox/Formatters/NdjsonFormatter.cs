@@ -11,6 +11,19 @@ public sealed class NdjsonFormatter : IOutputFormatter
             Console.WriteLine(JsonSerializer.Serialize(agent, JsonContext.Default.Agent));
     }
 
+    public void WriteGroups(IReadOnlyList<Group> groups)
+    {
+        foreach (var group in groups)
+            Console.WriteLine(JsonSerializer.Serialize(group, JsonContext.Default.Group));
+    }
+
+    public void WriteGroupMembers(string groupId, IReadOnlyList<GroupMember> members)
+    {
+        Console.WriteLine(JsonSerializer.Serialize(
+            new GroupMembersResult(groupId, [.. members]),
+            JsonContext.Default.GroupMembersResult));
+    }
+
     public void WriteMessage(Message message) =>
         Console.WriteLine(JsonSerializer.Serialize(message, JsonContext.Default.Message));
 
@@ -18,6 +31,12 @@ public sealed class NdjsonFormatter : IOutputFormatter
     {
         foreach (var entry in entries)
             Console.WriteLine(JsonSerializer.Serialize(entry, JsonContext.Default.InboxEntry));
+    }
+
+    public void WriteSearchResults(IReadOnlyList<SearchResult> results)
+    {
+        foreach (var result in results)
+            Console.WriteLine(JsonSerializer.Serialize(result, JsonContext.Default.SearchResult));
     }
 
     public void WriteRegistration(RegistrationResult result) =>

@@ -8,6 +8,8 @@ namespace AgentInbox.Commands;
 
 internal static class CommandExecution
 {
+    private const string GroupRecipientPrefix = "group:";
+
     public static int Fail(IOutputFormatter formatter, string message)
     {
         formatter.WriteError(message);
@@ -89,5 +91,105 @@ internal static class CommandExecution
             activeAgentIds.Add(reader.GetString(0));
 
         return activeAgentIds;
+    }
+
+    public static bool GroupExists(SqliteConnection conn, string groupId)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM groups WHERE id = @id AND deleted_at IS NULL";
+        cmd.Parameters.AddWithValue("@id", groupId);
+        return (long)(cmd.ExecuteScalar() ?? 0L) > 0;
+    }
+
+    public static bool AgentExists(SqliteConnection conn, string agentId)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM agents WHERE id = @id";
+        cmd.Parameters.AddWithValue("@id", agentId);
+        return (long)(cmd.ExecuteScalar() ?? 0L) > 0;
+    }
+
+    public static bool TryResolveSendRecipients(
+        SqliteConnection conn,
+        IReadOnlyList<string> rawRecipients,
+        IOutputFormatter formatter,
+        [NotNullWhen(true)] out List<string>? resolvedRecipientIds)
+    {
+        resolvedRecipientIds = null;
+        if (rawRecipients.Count == 0)
+        {
+            Fail(formatter, CommandNames.Messages.NoRecipientsSpecified);
+            return false;
+        }
+
+        var directRecipientIds = new List<string>();
+        var groupIds = new List<string>();
+
+        var seenDirectRecipients = new HashSet<string>(StringComparer.Ordinal);
+        var seenGroupIds = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var rawRecipient in rawRecipients)
+        {
+            if (rawRecipient.StartsWith(GroupRecipientPrefix, StringComparison.Ordinal))
+            {
+                var groupId = rawRecipient[GroupRecipientPrefix.Length..];
+                if (seenGroupIds.Add(groupId))
+                    groupIds.Add(groupId);
+                continue;
+            }
+
+            if (seenDirectRecipients.Add(rawRecipient))
+                directRecipientIds.Add(rawRecipient);
+        }
+
+        var finalRecipientIds = new HashSet<string>(StringComparer.Ordinal);
+
+        var activeDirectRecipientIds = GetActiveAgentIds(conn, directRecipientIds);
+        foreach (var recipientId in directRecipientIds)
+        {
+            if (!activeDirectRecipientIds.Contains(recipientId))
+            {
+                Fail(formatter, CommandNames.Messages.RecipientNotActive(recipientId));
+                return false;
+            }
+            finalRecipientIds.Add(recipientId);
+        }
+
+        foreach (var groupId in groupIds)
+        {
+            if (!GroupExists(conn, groupId))
+            {
+                Fail(formatter, CommandNames.Messages.GroupNotFound(groupId));
+                return false;
+            }
+
+            using var membersCmd = conn.CreateCommand();
+            membersCmd.CommandText = """
+                SELECT gm.agent_id
+                FROM group_members gm
+                JOIN agents a ON a.id = gm.agent_id
+                WHERE gm.group_id = @groupId
+                  AND a.deregistered_at IS NULL
+                ORDER BY gm.agent_id
+                """;
+            membersCmd.Parameters.AddWithValue("@groupId", groupId);
+            using var membersReader = membersCmd.ExecuteReader();
+
+            var hasActiveMembers = false;
+            while (membersReader.Read())
+            {
+                hasActiveMembers = true;
+                finalRecipientIds.Add(membersReader.GetString(0));
+            }
+
+            if (!hasActiveMembers)
+            {
+                Fail(formatter, CommandNames.Messages.GroupHasNoActiveMembers(groupId));
+                return false;
+            }
+        }
+
+        resolvedRecipientIds = [.. finalRecipientIds];
+        return true;
     }
 }

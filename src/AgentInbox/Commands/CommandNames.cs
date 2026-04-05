@@ -6,10 +6,18 @@ internal static class CommandNames
     public const string Register = "register";
     public const string Deregister = "deregister";
     public const string Agents = "agents";
+    public const string GroupCreate = "group-create";
+    public const string GroupDelete = "group-delete";
+    public const string Groups = "groups";
+    public const string GroupAddMember = "group-add-member";
+    public const string GroupRemoveMember = "group-remove-member";
+    public const string GroupMembers = "group-members";
     public const string Send = "send";
     public const string Reply = "reply";
     public const string Inbox = "inbox";
     public const string Read = "read";
+    public const string Search = "search";
+    public const string Index = "index";
 
     // Global options
     public const string DbPath = "--db-path";
@@ -20,6 +28,7 @@ internal static class CommandNames
 
     // Shared arguments
     public const string AgentIdArg = "agent-id";
+    public const string GroupIdArg = "group-id";
     public const string MessageIdArg = "message-id";
 
     // register options
@@ -34,23 +43,45 @@ internal static class CommandNames
     // inbox options
     public const string UnreadOnly = "--unread-only";
 
+    // search options
+    public const string Query = "--query";
+    public const string Mode = "--mode";
+    public const string Embedding = "--embedding";
+    public const string Limit = "--limit";
+
     internal static class Messages
     {
         // register
         public static string AgentRegistered(string id) => $"Agent '{id}' registered successfully.";
         public static string AgentAlreadyRegistered(string id) => $"Agent '{id}' is already registered.";
         public static string AgentReactivated(string id) => $"Agent '{id}' reactivated.";
+        public static string AgentIdReservedPrefix(string id) => $"Agent ID '{id}' cannot start with 'group:' (reserved prefix).";
 
         // deregister
         public static string AgentNotFound(string id) => $"Agent '{id}' not found.";
         public static string AgentAlreadyDeregistered(string id) => $"Agent '{id}' is already deregistered.";
         public static string AgentDeregistered(string id) => $"Agent '{id}' deregistered.";
 
+        // groups
+        public static string GroupCreated(string id) => $"Group '{id}' created successfully.";
+        public static string GroupAlreadyExists(string id) => $"Group '{id}' already exists.";
+        public static string GroupNotFound(string id) => $"Group '{id}' not found.";
+        public static string GroupDeleted(string id) => $"Group '{id}' deleted.";
+        public static string GroupMemberAdded(string groupId, string agentId) =>
+            $"Agent '{agentId}' added to group '{groupId}'.";
+        public static string GroupMemberAlreadyExists(string groupId, string agentId) =>
+            $"Agent '{agentId}' is already a member of group '{groupId}'.";
+        public static string GroupMemberNotFound(string groupId, string agentId) =>
+            $"Agent '{agentId}' is not a member of group '{groupId}'.";
+        public static string GroupMemberRemoved(string groupId, string agentId) =>
+            $"Agent '{agentId}' removed from group '{groupId}'.";
+
         // send
         public const string NoRecipientsSpecified = "No recipients specified.";
         public static string AgentNotActive(string id) => $"Agent '{id}' is not an active registered agent.";
         public static string SenderNotActive(string id) => $"Sender '{id}' is not an active registered agent.";
         public static string RecipientNotActive(string id) => $"Recipient '{id}' is not an active registered agent.";
+        public static string GroupHasNoActiveMembers(string id) => $"Group '{id}' has no active members.";
         public static string MessageSent(long id) => $"Message sent (ID: {id}).";
         public const string CapabilityTokenRequired = "Capability token is required.";
         public const string InvalidCapabilityToken = "Invalid token.";
@@ -61,6 +92,16 @@ internal static class CommandNames
         public const string NoReplyRecipients = "No recipients for the reply (you are the only participant).";
         public static string SenderNotParticipant(string id, long messageId) => $"Sender '{id}' is not a participant in message {messageId} and cannot reply to it.";
         public static string ReplySent(long id) => $"Reply sent (ID: {id}).";
+
+        // search / index
+        public const string SearchQueryRequired = "A --query is required.";
+        public const string SearchEmbeddingRequired = "A --query or --embedding is required for semantic search.";
+        public const string SemanticSearchUnavailable = "Semantic search is unavailable: the sqlite-vec extension could not be loaded.";
+        public const string InvalidEmbeddingJson = "Invalid --embedding value: expected a JSON array of numbers.";
+        public static string EmbeddingDimensionMismatch(int provided, int expected) =>
+            $"Embedding has {provided} dimensions but the schema requires {expected}.";
+        public static string EmbeddingStored(long messageId) => $"Embedding stored for message {messageId}.";
+        public static string MessageNotAccessibleForIndex(long id) => $"Message {id} not found or you are not a participant.";
     }
 
     internal static class Descriptions
@@ -72,10 +113,18 @@ internal static class CommandNames
         public const string Register = "Register an agent";
         public const string Deregister = "Deregister (soft-delete) an agent";
         public const string Agents = "List all active agents";
+        public const string GroupCreate = "Create a group";
+        public const string GroupDelete = "Delete a group";
+        public const string Groups = "List all groups";
+        public const string GroupAddMember = "Add an agent to a group";
+        public const string GroupRemoveMember = "Remove an agent from a group";
+        public const string GroupMembers = "List members of a group";
         public const string Send = "Send a message using a capability token";
         public const string Reply = "Reply to a message using a capability token";
         public const string Inbox = "List messages for the inbox authorized by a capability token";
         public const string Read = "Read a specific message and mark it as read using a capability token";
+        public const string Search = "Search inbox messages using full-text (FTS5) or semantic (vector) search";
+        public const string Index = "Store or update the embedding for a message to enable semantic search";
 
         // Global option descriptions
         public const string DbPath = "Path to the SQLite database file";
@@ -84,13 +133,14 @@ internal static class CommandNames
 
         // Argument descriptions
         public const string AgentIdArg = "The unique agent identifier";
+        public const string GroupIdArg = "The unique group identifier";
         public const string MessageIdArg = "Message ID to read";
 
         // register / deregister option descriptions
         public const string DisplayName = "Optional display name for the agent";
 
         // send option descriptions
-        public const string SendTo = "Comma-separated recipient agent IDs";
+        public const string SendTo = "Comma-separated recipient IDs (agent-id or group:<group-id>)";
         public const string Subject = "Message subject";
         public const string SendBody = "Message body";
 
@@ -100,5 +150,14 @@ internal static class CommandNames
 
         // inbox option descriptions
         public const string UnreadOnly = "Show only unread messages";
+
+        // search option descriptions
+        public const string SearchQuery = "Search query text (used for FTS5 text search, and as fallback for embedding generation in semantic mode)";
+        public const string SearchMode = "Search mode: 'text' (FTS5) or 'semantic' (vector similarity)";
+        public const string SearchEmbedding = "Pre-computed query embedding as a JSON float array (384 dimensions). Overrides built-in embedding generation in semantic mode.";
+        public const string SearchLimit = "Maximum number of results to return";
+
+        // index option descriptions
+        public const string IndexEmbedding = "Pre-computed embedding for the message as a JSON float array (384 dimensions). If omitted, an embedding is generated from the message text.";
     }
 }
