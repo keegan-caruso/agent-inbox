@@ -57,7 +57,7 @@ public static class IndexCommand
                     if (!reader.Read())
                         return CommandExecution.Fail(formatter, CommandNames.Messages.MessageNotAccessibleForIndex(messageId));
                     subject = reader.IsDBNull(0) ? null : reader.GetString(0);
-                    body = reader.GetString(1);
+                    body = reader.GetString(1); // body is NOT NULL per the schema
                 }
 
                 float[] embedding;

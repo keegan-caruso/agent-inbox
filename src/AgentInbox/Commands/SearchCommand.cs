@@ -177,13 +177,13 @@ public static class SearchCommand
         embedding = [];
         try
         {
-            var floats = JsonSerializer.Deserialize(json, JsonContext.Default.ListSingle);
-            if (floats == null)
+            var embeddingValues = JsonSerializer.Deserialize(json, JsonContext.Default.ListSingle);
+            if (embeddingValues == null)
             {
                 formatter.WriteError(CommandNames.Messages.InvalidEmbeddingJson);
                 return false;
             }
-            embedding = [.. floats];
+            embedding = [.. embeddingValues];
             return true;
         }
         catch

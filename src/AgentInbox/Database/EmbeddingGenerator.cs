@@ -16,7 +16,9 @@ internal static class EmbeddingGenerator
         var vector = new float[Dimensions];
         var lower = text.ToLowerInvariant();
 
-        // Character trigrams (weight 1.0)
+        // Character trigrams (weight 1.0).
+        // Note: for texts shorter than 3 characters, the trigram loop does not execute
+        // and only unigram features are produced. Short texts still produce a valid (though sparse) vector.
         for (var i = 0; i <= lower.Length - 3; i++)
         {
             var bucket = (int)((uint)FnvHash(lower, i, 3) % Dimensions);

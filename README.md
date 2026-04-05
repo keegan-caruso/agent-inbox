@@ -216,9 +216,9 @@ agent-inbox index 1 --token "$BOB_TOKEN" --embedding "[0.12, -0.05, ...]"
 
 **About embeddings**: The built-in character n-gram embedding generator produces 384-dimensional vectors that support basic keyword-level similarity. For higher-quality semantic search, provide pre-computed embeddings from an external model:
 
-- **Ollama** (`nomic-embed-text` produces 768-dim; use a 384-dim model like `all-minilm`):
+- **Ollama** (`nomic-embed-text` produces 768-dim; use a 384-dim model like `all-minilm:l6-v2`):
   ```bash
-  EMB=$(curl -s http://localhost:11434/api/embeddings -d '{"model":"all-minilm","prompt":"deployment failed"}' | jq -c .embedding)
+  EMB=$(curl -s http://localhost:11434/api/embeddings -d '{"model":"all-minilm:l6-v2","prompt":"deployment failed"}' | jq -c .embedding)
   agent-inbox index 1 --token "$BOB_TOKEN" --embedding "$EMB"
   ```
 - **OpenAI** (`text-embedding-3-small` with dimensions=384):
