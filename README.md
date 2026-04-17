@@ -12,8 +12,7 @@ Groups are named recipient sets with persistent membership. Groups are reusable 
 
 ## Known Limitations
 
-- Capability-token schema changes currently assume a fresh database.
-- Database migration and backward compatibility for older databases are not handled yet.
+- Migration for older or unversioned databases is not yet implemented; only fresh databases and current-version databases are supported.
 
 ## Requirements
 
@@ -264,7 +263,16 @@ agent-inbox index 1 --token "$BOB_TOKEN" --embedding "[0.12, -0.05, ...]"
 
 ## Database
 
-The SQLite database is created automatically on first use. Schema:
+The SQLite database is created automatically on first use. Schema versioning uses SQLite `PRAGMA user_version`.
+
+- **Fresh database**: initialized to the latest schema and assigned `user_version = 1`.
+- **Current-version database** (`user_version = 1`): opened normally.
+- **Unversioned legacy database** (tables present, `user_version = 0`): rejected; migration is not implemented yet.
+- **Newer database** (`user_version > 1`): rejected; created by a future binary this version does not support.
+
+Future schema changes will increment `user_version` and be handled version-to-version. Backward compatibility for older databases is not implemented yet.
+
+Schema tables:
 
 - **agents**: Registered agents with optional display names, capability token hashes, token creation timestamps, and soft-delete support
 - **messages**: Messages with sender, subject, body, and optional reply threading
@@ -273,8 +281,6 @@ The SQLite database is created automatically on first use. Schema:
 - **group_members**: Group membership edges between groups and agents
 - **messages_fts**: FTS5 virtual table for full-text search (always present; mirrors `messages`)
 - **message_embeddings**: sqlite-vec `vec0` virtual table for semantic vector search (present when the sqlite-vec extension loads successfully; 384-dimensional float vectors)
-
-This schema change currently assumes a fresh database. Database migration and backward compatibility for older databases are not handled yet.
 
 ## Security and Trust Model
 
