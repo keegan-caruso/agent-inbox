@@ -51,6 +51,10 @@ dotnet tool uninstall --global AgentInbox
 dotnet build src/AgentInbox/AgentInbox.csproj -c Release
 ```
 
+## Versioning
+
+This project follows [Semantic Versioning](https://semver.org/). Release notes are tracked in [CHANGELOG.md](CHANGELOG.md).
+
 ## Run Tests
 
 ```bash
