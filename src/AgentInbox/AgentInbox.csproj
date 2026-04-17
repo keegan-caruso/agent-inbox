@@ -12,21 +12,23 @@
     <ToolCommandName>agent-inbox</ToolCommandName>
     <PackageId>AgentInbox</PackageId>
     <Version>0.1.0</Version>
-    <Authors>Keegan Caruso</Authors>
+    <Authors>keegan-caruso</Authors>
     <Description>A CLI tool for inter-agent communication on a single machine, backed by a local SQLite database.</Description>
+    <PackageReleaseNotes>See CHANGELOG.md</PackageReleaseNotes>
     <PackageProjectUrl>https://github.com/keegan-caruso/agent-inbox</PackageProjectUrl>
     <RepositoryUrl>https://github.com/keegan-caruso/agent-inbox</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageTags>cli;agent;messaging;sqlite;communication</PackageTags>
+    <PackageTags>cli;agent;inbox;sqlite;dotnet-tool;messaging;ai</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
