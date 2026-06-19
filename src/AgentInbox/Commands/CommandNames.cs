@@ -18,6 +18,8 @@ internal static class CommandNames
     public const string Read = "read";
     public const string Search = "search";
     public const string Index = "index";
+    public const string Remember = "remember";
+    public const string Recall = "recall";
 
     // Global options
     public const string DbPath = "--db-path";
@@ -50,6 +52,10 @@ internal static class CommandNames
     public const string Mode = "--mode";
     public const string Embedding = "--embedding";
     public const string Limit = "--limit";
+
+    // remember options
+    public const string Content = "--content";
+    public const string Tags = "--tags";
 
     internal static class Messages
     {
@@ -95,6 +101,9 @@ internal static class CommandNames
         public static string SenderNotParticipant(string id, long messageId) => $"Sender '{id}' is not a participant in message {messageId} and cannot reply to it.";
         public static string ReplySent(long id) => $"Reply sent (ID: {id}).";
 
+        // remember / recall
+        public static string MemoryStored(long id) => $"Memory stored (ID: {id}).";
+
         // search / index
         public const string SearchQueryRequired = "A --query is required.";
         public const string SearchEmbeddingRequired = "A --query or --embedding is required for semantic search.";
@@ -127,6 +136,8 @@ internal static class CommandNames
         public const string Read = "Read a specific message and mark it as read using a capability token";
         public const string Search = "Search inbox messages using full-text (FTS5) or semantic (vector) search";
         public const string Index = "Store or update the embedding for a message to enable semantic search";
+        public const string Remember = "Store a memory for later recall";
+        public const string Recall = "Search stored memories using full-text (FTS5) or semantic (vector) search";
 
         // Global option descriptions
         public const string DbPath = "Path to the SQLite database file";
@@ -162,5 +173,9 @@ internal static class CommandNames
 
         // index option descriptions
         public const string IndexEmbedding = "Pre-computed embedding for the message as a JSON float array (384 dimensions). If omitted, an embedding is generated from the message text.";
+
+        // remember / recall option descriptions
+        public const string MemoryContent = "The memory content to store";
+        public const string MemoryTags = "Comma-separated tags for the memory (stored as subject)";
     }
 }

@@ -57,6 +57,8 @@ public static class AgentInboxCli
         rootCommand.Add(ReadCommand.Build(dbPathOption, formatOption));
         rootCommand.Add(SearchCommand.Build(dbPathOption, formatOption));
         rootCommand.Add(IndexCommand.Build(dbPathOption, formatOption));
+        rootCommand.Add(RememberCommand.Build(dbPathOption, formatOption));
+        rootCommand.Add(RecallCommand.Build(dbPathOption, formatOption));
 
         return rootCommand;
     }
