@@ -71,12 +71,12 @@ public static class IndexCommand
                 else
                 {
                     var text = string.IsNullOrEmpty(subject) ? body! : $"{subject} {body}";
-                    embedding = EmbeddingGenerator.Generate(text);
+                    embedding = ctx.EmbeddingGenerator.Generate(text);
 
                     Diagnostics.DiagnosticManager.EmitIndexExecuted("auto-generated");
                 }
 
-                if (embedding.Length != EmbeddingGenerator.Dimensions)
+                if (embedding.Length != ctx.EmbeddingGenerator.Dimensions)
                     return CommandExecution.Fail(formatter, CommandNames.Messages.EmbeddingDimensionMismatch(embedding.Length, EmbeddingGenerator.Dimensions));
 
                 var embeddingBytes = SearchCommand.SerializeEmbeddingForVec(embedding);

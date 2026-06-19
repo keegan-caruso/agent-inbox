@@ -3,7 +3,8 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>agent-inbox</AssemblyName>
     <RootNamespace>AgentInbox</RootNamespace>
-    <PublishAot>true</PublishAot>
+    <!-- PublishAot disabled: Microsoft.ML.OnnxRuntime is not NativeAOT-compatible. -->
+    <PublishAot>false</PublishAot>
     <InvariantGlobalization>true</InvariantGlobalization>
     <OptimizationPreference>Speed</OptimizationPreference>
 
@@ -33,5 +34,7 @@
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
     <PackageReference Include="sqlite-vec" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" />
+    <PackageReference Include="Microsoft.ML.Tokenizers" />
   </ItemGroup>
 </Project>

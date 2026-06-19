@@ -1,31 +1,24 @@
 namespace AgentInbox.Database;
 
-/// <summary>
-/// Generates a simple character-trigram bag-of-words embedding vector.
-/// The algorithm is fully deterministic and requires no external dependencies,
-/// making it suitable for Native AOT and offline use. Quality is adequate for
-/// keyword-level similarity; for higher-quality semantic search provide
-/// pre-computed embeddings via --embedding.
-/// </summary>
-internal static class EmbeddingGenerator
+// Character-trigram bag-of-words fallback — deterministic, no external deps, AOT-safe.
+// Quality is adequate for keyword-level similarity; for true semantic search use OnnxEmbeddingGenerator.
+internal sealed class EmbeddingGenerator : IEmbeddingGenerator
 {
-    public const int Dimensions = 384;
+    public static readonly EmbeddingGenerator Instance = new();
 
-    public static float[] Generate(string text)
+    public int Dimensions => 384;
+
+    public float[] Generate(string text)
     {
         var vector = new float[Dimensions];
         var lower = text.ToLowerInvariant();
 
-        // Character trigrams (weight 1.0).
-        // Note: for texts shorter than 3 characters, the trigram loop does not execute
-        // and only unigram features are produced. Short texts still produce a valid (though sparse) vector.
         for (var i = 0; i <= lower.Length - 3; i++)
         {
             var bucket = (int)((uint)FnvHash(lower, i, 3) % Dimensions);
             vector[bucket] += 1.0f;
         }
 
-        // Character unigrams (weight 0.5) to handle very short texts
         for (var i = 0; i < lower.Length; i++)
         {
             var bucket = (int)((uint)FnvHash(lower, i, 1) % Dimensions);

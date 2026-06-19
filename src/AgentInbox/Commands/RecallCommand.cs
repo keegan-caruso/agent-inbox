@@ -111,14 +111,14 @@ public static class RecallCommand
         }
         else if (!string.IsNullOrWhiteSpace(query))
         {
-            queryEmbedding = EmbeddingGenerator.Generate(query);
+            queryEmbedding = ctx.EmbeddingGenerator.Generate(query);
         }
         else
         {
             return CommandExecution.Fail(formatter, CommandNames.Messages.SearchEmbeddingRequired);
         }
 
-        if (queryEmbedding.Length != EmbeddingGenerator.Dimensions)
+        if (queryEmbedding.Length != ctx.EmbeddingGenerator.Dimensions)
             return CommandExecution.Fail(formatter, CommandNames.Messages.EmbeddingDimensionMismatch(queryEmbedding.Length, EmbeddingGenerator.Dimensions));
 
         var conn = ctx.Connection;
