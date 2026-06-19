@@ -3,8 +3,13 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>agent-inbox</AssemblyName>
     <RootNamespace>AgentInbox</RootNamespace>
-    <!-- PublishAot disabled: Microsoft.ML.OnnxRuntime is not NativeAOT-compatible. -->
+    <!-- NativeAOT disabled: Microsoft.ML.OnnxRuntime is not NativeAOT-compatible. -->
     <PublishAot>false</PublishAot>
+    <!-- Partial trimming: trims opt-in assemblies (our code, Sqlite, CommandLine, etc.)
+         while leaving OnnxRuntime and ML.Tokenizers untouched to avoid runtime failures. -->
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>partial</TrimMode>
+    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
     <InvariantGlobalization>true</InvariantGlobalization>
     <OptimizationPreference>Speed</OptimizationPreference>
 
